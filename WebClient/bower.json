@@ -1,0 +1,20 @@
+{
+  "name": "WebClient",
+  "version": "0.0.0",
+  "homepage": "https://github.com/Shuffle-Game/AnyCardGame",
+  "authors": [
+    "Salvatore <dested@gmail.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "angularjs#~1.4.4",
+    "angularjs": "~1.4.4"
+  }
+}
