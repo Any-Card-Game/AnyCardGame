@@ -19,6 +19,7 @@ namespace Common.Utils
             tasks.Add(key, lateTaskResult);
             var deferred = new Task<T>(() =>
             {
+                tasks.Remove(key);
                 return lateTaskResult.Result;
             });
             lateTaskResult.Task = deferred;

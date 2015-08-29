@@ -1,4 +1,5 @@
 using RestServer.Common;
+using RestServer.Common.Nancy;
 using RestServer.Logic;
 
 namespace RestServer.Modules
@@ -8,7 +9,8 @@ namespace RestServer.Modules
         public GatewayModule():base("api/gateway")
         {
             Get["/",true] = async (_, ct) =>
-            { 
+            {
+                this.RequiresAuthentication();
                 var model = ValidateRequest<GetGatewayRequest>();
                 var response = await GatewayLogic.GetFastestGateway(model);
                 return this.Success(response);
