@@ -17,7 +17,7 @@ namespace Common.Redis
               redisIP = "198.211.107.101";
             var redisPort = 6379;
             Console.WriteLine("Connecting");
-            ConnectionMultiplexer redis = ConnectionMultiplexer.Connect($"{redisIP}:{redisPort}",Console.Out);
+            ConnectionMultiplexer redis = ConnectionMultiplexer.Connect($"{redisIP}:{redisPort}");
             Console.WriteLine("Connected");
             subscriber = redis.GetSubscriber();
             Console.WriteLine("Subscribed");
