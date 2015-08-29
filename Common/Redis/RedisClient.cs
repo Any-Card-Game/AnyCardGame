@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Common.Redis.RedisMessages;
+using Common.Utils;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
@@ -9,47 +14,87 @@ namespace Common.Redis
 {
     public class RedisClient
     {
+        private Dictionary<RedisChannels, Action<RedisMessage>> subscriptions = new Dictionary<RedisChannels, Action<RedisMessage>>();
+        private IDatabase database;
         private ISubscriber subscriber;
-        private Dictionary<string, Action<IRedisMessage>> subscriptions = new Dictionary<string, Action<IRedisMessage>>();
+        private LateTaskManager<RedisMessage> lateTaskManager;
+
+
         public RedisClient()
         {
             var redisIP = "198.211.107.101";
-              redisIP = "198.211.107.101";
             var redisPort = 6379;
-            Console.WriteLine("Connecting");
             ConnectionMultiplexer redis = ConnectionMultiplexer.Connect($"{redisIP}:{redisPort}");
-            Console.WriteLine("Connected");
+            database = redis.GetDatabase();
             subscriber = redis.GetSubscriber();
-            Console.WriteLine("Subscribed");
+            lateTaskManager = new LateTaskManager<RedisMessage>();
         }
 
-        public void Subscribe(string channel, Action<IRedisMessage> resolve)
+        public void Subscribe(RedisChannels channel, Action<RedisMessage> resolve)
         {
             subscriptions.Add(channel, resolve);
-
-            subscriber.Subscribe(channel, onReceiveMessage);
+            subscriber.Subscribe(channel.ToString(), onReceiveMessage);
+        }
+        public void SubscribeToAnswers(RedisChannels channel)
+        {
+            subscriber.Subscribe(channel.ToString(), onReceiveMessage);
         }
 
         private void onReceiveMessage(RedisChannel channel, RedisValue value)
         {
-            IRedisMessage obj = JsonConvert.DeserializeObject<IRedisMessage>(value, new JsonSerializerSettings()
+            string work = (string)database.ListRightPop($"{(string)channel}-bl");
+            if (work == null) return;
+
+
+            RedisMessage message = JsonConvert.DeserializeObject<RedisMessage>(work, new JsonSerializerSettings()
             {
                 TypeNameHandling = TypeNameHandling.Objects
             });
-            subscriptions[(string)channel](obj);
+
+
+            if (lateTaskManager.Exists(message.Guid))
+            {
+                lateTaskManager.Resolve(message.Guid,message);
+            }
+            else
+            {
+                if (subscriptions[Utils.Utils.ParseEnum<RedisChannels>(channel)] != null)
+                {
+                    subscriptions[Utils.Utils.ParseEnum<RedisChannels>(channel)](message);
+                }
+            }
         }
 
-        public void SendMessage(string channel, IRedisMessage message)
+        public void SendMessage(RedisChannels channel, RedisMessage message = null)
         {
-            var sz = JsonConvert.SerializeObject(message, new JsonSerializerSettings()
+
+            message = message ?? new DefaultRedisMessage();
+
+            string str = JsonConvert.SerializeObject(message, new JsonSerializerSettings()
             {
                 TypeNameHandling = TypeNameHandling.Objects
             });
-            subscriber.Publish(channel, sz);
+
+            database.ListLeftPush($"{channel}-bl", str);
+            subscriber.Publish(channel.ToString(), "");
+        }
+
+        public Task<RedisMessage> AskQuestion(RedisChannels channelEnum, RedisMessage message = null)
+        {
+            var channel = channelEnum.ToString();
+
+            message = message ?? new DefaultRedisMessage();
+
+            string str = JsonConvert.SerializeObject(message, new JsonSerializerSettings()
+            {
+                TypeNameHandling = TypeNameHandling.Objects
+            });
+
+            database.ListLeftPush($"{channel}-bl", str);
+            subscriber.Publish(channel, "");
+
+            return lateTaskManager.Build(message.Guid);
         }
     }
-     
-    public interface IRedisMessage
-    {
-    }
+
 }

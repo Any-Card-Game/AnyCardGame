@@ -7,24 +7,30 @@ using System.Threading.Tasks;
 using Alchemy;
 using Alchemy.Classes;
 using Common.Redis;
+using Common.Redis.RedisMessages;
+using Newtonsoft.Json;
 
 namespace SocketServer
 {
     class Program
     {
+
         static void Main(string[] args)
         {
+            string url = Utils.GetPublicIP() + ":81";
+            Console.WriteLine(url);
 
             RedisClient client = new RedisClient();
-            client.Subscribe("Shoes", a =>
+            client.Subscribe(RedisChannels.GetNextGatewayRequest, request =>
             {
+                client.SendMessage(RedisChannels.GetNextGatewayResponse,new NextGatewayResponseRedisMessage()
+                {
+                    Guid= request.Guid,
+                    GatewayUrl = url
+                });
+            });
 
-            });
-            client.SendMessage("Shoes", new ThisRedditMessage()
-            {
-                Bar = 12,
-                Foo = 19
-            });
+
             var aServer = new WebSocketServer(81, IPAddress.Any)
             {
                 OnConnected = OnConnected,
@@ -32,22 +38,27 @@ namespace SocketServer
             };
 
             aServer.Start();
+            start = DateTime.Now;
+            curDateTime = DateTime.Now;
             Console.ReadLine();
         }
 
-        public class ThisRedditMessage : IRedisMessage
-        {
-            public int Foo { get; set; }
-            public int Bar { get; set; }
-        }
 
+        private static int count = 0;
+        private static DateTime start;
+        private static DateTime curDateTime;
         static void OnConnected(UserContext context)
         {
             context.SetOnDisconnect(OnDisconnect);
             context.SetOnReceive(OnReceive);
 
             Console.WriteLine("Client Connection From : " + context.ClientAddress.ToString());
-            context.Send("hi");
+
+            var str = JsonConvert.SerializeObject(new ThisRedditMessage(), new JsonSerializerSettings()
+            {
+                TypeNameHandling = TypeNameHandling.Objects
+            });
+            context.Send(str);
         }
 
         private static void OnDisconnect(UserContext context)
@@ -57,8 +68,25 @@ namespace SocketServer
 
         private static void OnReceive(UserContext context)
         {
-            Console.WriteLine("Client receive From : " + context.ClientAddress.ToString() + " " + context.DataFrame.ToString());
-            context.Send("hi");
+            count++;
+            if ((DateTime.Now) > (curDateTime.AddSeconds(1)))
+            {
+                curDateTime = DateTime.Now;
+                Console.WriteLine(count / ((curDateTime - start).TotalSeconds));
+            }
+
+
+            RedisMessage obj = JsonConvert.DeserializeObject<RedisMessage>(context.DataFrame.ToString(), new JsonSerializerSettings()
+            {
+                TypeNameHandling = TypeNameHandling.Objects
+            });
+
+
+            var str = JsonConvert.SerializeObject(new ThisRedditMessage(), new JsonSerializerSettings()
+            {
+                TypeNameHandling = TypeNameHandling.Objects
+            });
+            context.Send(str);
         }
     }
 }
