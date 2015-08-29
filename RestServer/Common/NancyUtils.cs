@@ -19,7 +19,7 @@ namespace RestServer.Common
         {
             var request = this.Bind<T>(new BindingConfig() { IgnoreErrors = false });
             var validationResults = new List<ValidationResult>();
-            var isValid = Validator.TryValidateObject(request, new ValidationContext(request, null, null), validationResults);
+            var isValid = Validator.TryValidateObject(request, new ValidationContext(request), validationResults);
             if (!isValid)
             {
                 throw new Exception(validationResults.Select(a => a.ErrorMessage).Aggregate("", (a, b) => a + b));
