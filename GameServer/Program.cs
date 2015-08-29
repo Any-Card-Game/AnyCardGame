@@ -15,15 +15,7 @@ using Jint.Runtime.Interop;
 
 namespace GameServer
 {
-    public class Pile
-    {
-        public string Name { get; set; }
-        public Pile(string name)
-        {
-            Name = name;
-        }
-    }
-
+   
 
     public sealed class SalConstructor : FunctionInstance, IConstructor
     {
@@ -84,10 +76,20 @@ namespace GameServer
             objectPrototype2.FastAddProperty("constructor", (JsValue)((ObjectInstance)objectConstructor), true, false, true);
             objectPrototype2.FastAddProperty("shoes", (JsValue)((ObjectInstance)new ClrFunctionInstance(engine, new Func<JsValue, JsValue[], JsValue>(getThing))), true, false, true);
             return objectPrototype2;
+            
         }
 
         private static JsValue getThing(JsValue arg1, JsValue[] arg2)
         {
+            /*      ObjectInstance objectInstance = TypeConverter.ToObject(this.Engine, thisObject);
+                  double num = (double) TypeConverter.ToUint32((JsValue) TypeConverter.ToNumber(objectInstance.Get("length")));
+                  foreach (JsValue jsValue in arguments)
+                  {
+                    objectInstance.Put(TypeConverter.ToString((JsValue) num), jsValue, true);
+                    ++num;
+                  }
+                  objectInstance.Put("length", (JsValue) num, true);
+                  return (JsValue) num;*/
             return arg2[0].AsNumber()*12;
         }
 
@@ -98,7 +100,19 @@ namespace GameServer
     }
 
 
+    public class Pile
+    {
+        public string Name { get; set; }
+        public Pile(string name)
+        {
+            Name = name;
+        }
 
+        public int shoes(int item)
+        {
+            return item*12;
+        }
+    }
 
     class Program
     {
@@ -108,9 +122,11 @@ namespace GameServer
             engine.SetValue("log", new Action<object>(a =>
             {
                 
-            })); 
+            }));
             //todo make a generic way to add new classes and shit
-            engine.SetValue("Pile", SalConstructor.CreateObjectConstructor(engine));
+
+
+            engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(Pile)));
 //            engine = engine.Execute("var j=new Pile('spades');log(j.doThing(15));");
 //            var cdc = engine.GetValue("j");
 
