@@ -17,7 +17,8 @@ using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 
 namespace GameServer
-{
+{ 
+
     class Program
     {
         static void Main(string[] args)
@@ -39,6 +40,7 @@ namespace GameServer
             engine.SetValue("TableSpace", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGameTableSpace)));
             engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGamePile)));
             engine.SetValue("GameUtils", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameUtils)));
+            engine.SetValue("Shuff", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.Shuff)));
 
 
             var sevens = File.ReadAllText("js/sevens.js");
@@ -48,6 +50,7 @@ namespace GameServer
             c.GetValue("cg").AsObject().Get("__init__").Invoke(c.GetValue("cg"), new JsValue[] { 12 });
 
             c = c.Execute("var _=new GameUtils()");
+            c = c.Execute("var shuff=new Shuff()");
             c = c.Execute("var sevens=new Sevens()");
 
             c = c.Execute("sevens.constructor(cg);");

@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestServer", "RestServer\RestServer.csproj", "{F8A5A9AD-F680-46F4-806F-653E7E51A030}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jint", "..\jint\Jint\Jint.csproj", "{678738DA-F723-4920-B9E5-CAD667104BDA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jint", "jint\Jint\Jint.csproj", "{678738DA-F723-4920-B9E5-CAD667104BDA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

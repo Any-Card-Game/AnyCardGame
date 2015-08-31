@@ -22,50 +22,31 @@
             return true;
         }
 
- /*       _.numbers(1, 20).forEach(function () {
+        _.numbers(1, 20).forEach(function () {
             self.cardGame.deck.cards = self.shuffle(self.cardGame.deck.cards);
-        });*/
-
-        var tableTextArea = new TableTextArea({ name: 'shoes' });
-        self.cardGame.textAreas.push(tableTextArea);
-        self.cardGame.textAreas.push(tableTextArea);
-        self.cardGame.textAreas.push(tableTextArea);
-        log(self.cardGame.textAreas.length);
-        log(self.cardGame.textAreas);
-        log(self.cardGame);
-
+        });
 
         self.cardGame.users.forEach(function (u, ind,o) {
             //shuff.log('::' + u.userName);
             var spaceByName = self.cardGame.getSpaceByName('User' + ind);
-            log('2c')
-            log(u.cards)
-            log('User' + ind+"::")
-            log(spaceByName)
-
             var assignPile = spaceByName.assignPile(u.cards);
-            log('3c')
-
             assignPile.assignUser(u);
-            log('1c')
             self.cardGame.getTextByName('User' + ind).text = u.userName; 
         });
-        log('3');
 
-
+        log(self.cardGame.deck.cards.length);
         while (self.cardGame.deck.cards.length > 0) {
             self.cardGame.users.forEach(function(u) {
                 if (self.cardGame.deck.cards.length > 0) {
                     self.cardGame.deck.cards[0].state = 2;
                     u.cards.cards.push(self.cardGame.deck.cards[0]);
-                    self.cardGame.deck.cards.remove(self.cardGame.deck.cards[0]);
+                    self.cardGame.deck.cards.splice(self.cardGame.deck.cards.indexOf(self.cardGame.deck.cards[0]), 1);
                 }
             });
         }
 
-        log('here');
         self.cardGame.users.forEach(function(u) {
-            u.cards.cards.sortCards();
+            u.cards.sortCards();
         });
 
         var CardTypes = ['Diamonds', 'Clubs', 'Hearts', 'Spades'];
@@ -74,7 +55,7 @@
         while (true) {
             var result = self.cardGame.users.forEach(function(u) {
 
-                var usable = u.cards.cards.where(function(c) {
+                var usable = u.cards.cards.where(function (c) {
                     return (c.type == 3 && (c.value == 6 || self.spades.cards.any(function(_c) {
                         return _c.value == c.value + 1 || _c.value == c.value - 1;
                     }))) ||
@@ -88,9 +69,10 @@
                         return _c.value == c.value + 1 || _c.value == c.value - 1;
                     })));
                 });
+
                 var answers = [];
                 answers.push('Skip');
-                usable.sortCards().forEach(function(card) {
+                usable.forEach(function(card) {
                     answers.push(CardNames[card.value] + ' Of ' + CardTypes[card.type]);
                 });
 
@@ -176,11 +158,11 @@
                                 break;
                             }
                         }
-
-
                     }
                 }
+                log('here10');
                 //shuff.log('asking question');
+                log(shuff)
                 var de = shuff.askQuestion(u, 'Which card would you like to play?', answers, self.cardGame);
                 //shuff.log('asked question: ' + de);
 
@@ -192,22 +174,26 @@
                     case 3:
                         u.cards.cards.remove(rm);
                         self.spades.cards.push(rm);
-                        self.spades.cards.sortCards().reverse();
+                        self.spades.sortCards();
+                        self.spades.reverseCards();
                         break;
                     case 1:
                         u.cards.cards.remove(rm);
                         self.clubs.cards.push(rm);
-                        self.clubs.cards.sortCards().reverse();
+                        self.clubs.sortCards();
+                        self.clubs.reverseCards();
                         break;
                     case 2:
                         u.cards.cards.remove(rm);
                         self.hearts.cards.push(rm);
-                        self.hearts.cards.sortCards().reverse();
+                        self.hearts.sortCards();
+                        self.hearts.reverseCards();
                         break;
                     case 0:
                         u.cards.cards.remove(rm);
                         self.diamonds.cards.push(rm);
-                        self.diamonds.cards.sortCards().reverse();
+                        self.diamonds.sortCards();
+                        self.diamonds.reverseCards();
                         break;
                     }
 
