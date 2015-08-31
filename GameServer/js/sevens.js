@@ -17,11 +17,6 @@
     }; 
 
     self.runGame = function () {
-        if (!self.cardGame.users || self.cardGame.users.length == 0) {
-            log("baaad");
-            return true;
-        }
-
         _.numbers(1, 20).forEach(function () {
             self.cardGame.deck.cards = self.shuffle(self.cardGame.deck.cards);
         });
@@ -34,7 +29,6 @@
             self.cardGame.getTextByName('User' + ind).text = u.userName; 
         });
 
-        log(self.cardGame.deck.cards.length);
         while (self.cardGame.deck.cards.length > 0) {
             self.cardGame.users.forEach(function(u) {
                 if (self.cardGame.deck.cards.length > 0) {

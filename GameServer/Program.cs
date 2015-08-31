@@ -28,53 +28,96 @@ namespace GameServer
 
         static void Main(string[] args)
         {
+            int totalGames = 500;
+            ThreadPool.SetMinThreads(500, 500);
+            for (int i = 0; i < totalGames; i++)
+            {
+                runThing(i);
+            }
+            DateTime now=DateTime.Now;
+            DateTime startNow=DateTime.Now;
+            bool first = false;
+            while (true)
+            {
+                if (answers == 0)
+                {
+                    continue;
+                }
+                else
+                {
+                    if (!first)
+                    {
+                        Console.WriteLine("First");
+                        first = true;
+                        startNow = DateTime.Now;
+                        now = DateTime.Now;
+                    }
+                    if (now.AddSeconds(1) <= DateTime.Now)
+                    {
+                        if (GamesDone == totalGames)
+                        {
+                            break;
+                        }
+                        now = DateTime.Now;
+                        Console.WriteLine(answers/ (DateTime.Now - startNow).TotalSeconds +" Answers per second");
+                    }
+                }
+
+            }
+
+            Console.WriteLine("Press any [Enter] to close the host.");
+            Console.ReadLine();
+        }
+
+        private static int answers = 0;
+        private static int GamesDone = 0;
+        private static void runThing(int gameId)
+        {
             BackgroundWorker thread = null;
             AnswerManager answerResponse = new AnswerManager();
             thread = new BackgroundWorker();
             thread.WorkerReportsProgress = true;
+            int questionIndex = 0;
             thread.ProgressChanged += (a, b) =>
             {
-
                 if (b.ProgressPercentage == 0)
                 {
-                    Thread.Sleep(1);
+                    answers++;
+
+//                                    Console.WriteLine("GAME INDEX::::" + gameId+"::::::"+ questionIndex++);
                     var questionc = (Tuple<Thread, CardGameQuestion>)b.UserState;
                     var question = questionc.Item2;
-
-                    Console.WriteLine(question.User.UserName + ": " + question.Question);
+                    //                    Console.WriteLine(question.User.UserName + ": " + question.Question);
                     foreach (var answer in question.Answers)
                     {
-                        Console.WriteLine(answer);
+                        //                        Console.WriteLine(answer);
                     }
-                    answerResponse.Answer = 1;//int.Parse(Console.ReadKey().KeyChar.ToString());
-                    if ((questionc.Item1.ThreadState & ThreadState.Suspended) == ThreadState.Suspended)
+                    answerResponse.Answer = 1; //int.Parse(Console.ReadKey().KeyChar.ToString());
+                    while ((questionc.Item1.ThreadState & ThreadState.Suspended) != ThreadState.Suspended)
                     {
-                        questionc.Item1.Resume();
-                        return;
+                        Thread.Sleep(10);
                     }
-                    Console.WriteLine(questionc.Item1.ThreadState);
-                    Console.WriteLine(" SHould never get here");
-                    if ((questionc.Item1.ThreadState & ThreadState.Background) == ThreadState.Background)
+
+                    if ((questionc.Item1.ThreadState & ThreadState.Suspended) == ThreadState.Suspended)
                     {
                         questionc.Item1.Resume();
                     }
                 }
                 else if (b.ProgressPercentage == 1)
                 {
+                    GamesDone++;
+                    Console.WriteLine("GAME INDEX::::" + gameId + "::::::");
                     var userc = (Tuple<Thread, CardGameUser>)b.UserState;
                     var user = userc.Item2;
 
                     Console.WriteLine(user.UserName + " Has won!");
-
                 }
-
-
             };
 
 
             thread.DoWork += (t, cc) =>
             {
-
+                Console.WriteLine("Started "+gameId);
                 Jint.Engine engine = new Jint.Engine();
                 engine.SetValue("log", new Action<object>(a => { Console.WriteLine(a); }));
 
@@ -90,7 +133,6 @@ namespace GameServer
 
                 try
                 {
-
                     var sevens = File.ReadAllText("js/sevens.js");
                     var c = executeES6(engine, sevens);
                     c = c.Execute("var cg=new CardGame()");
@@ -110,9 +152,9 @@ namespace GameServer
                     c = c.Execute("var sevens=new Sevens()");
 
                     c = c.Execute("sevens.constructor(cg);");
+                    Console.WriteLine("Running game "+gameId);
 
                     c = c.Execute("sevens.runGame(cg);");
-
                 }
                 catch (Exception exc)
                 {
@@ -122,16 +164,11 @@ namespace GameServer
                         var javaScriptException = (exc.InnerException as JavaScriptException);
                         throw new ApplicationException($"{javaScriptException.Error} " +
                                                        $"({location.Source}: Line {location.Start.Line}, Column {location.Start.Column} to Line {location.End.Line}, Column {location.End.Column})", exc);
-
                     }
                 }
-
             };
 
             thread.RunWorkerAsync();
-
-            Console.WriteLine("Press any [Enter] to close the host.");
-            Console.ReadLine();
         }
 
         private static void declareWinner(BackgroundWorker thread, CardGameUser user)
