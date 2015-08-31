@@ -17,55 +17,61 @@ using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 
 namespace GameServer
-{ 
+{
 
     class Program
     {
         static void Main(string[] args)
         {
-
-            //            var thread=new Thread(() =>
-            //            {
-            Jint.Engine engine = new Jint.Engine();
-            engine.SetValue("log", new Action<object>(a =>
-            {
-                 Console.WriteLine(a);
-            }));
+            Thread thread=null;
+            thread = new Thread(() =>
+             {
+                 Jint.Engine engine = new Jint.Engine();
+                 engine.SetValue("log", new Action<object>(a =>{Console.WriteLine(a);}));
 
 
-            engine.SetValue("CardGame", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameCardGame)));
-            engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGamePile)));
+                 engine.SetValue("CardGame", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameCardGame)));
+                 engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGamePile)));
 
-            engine.SetValue("TableTextArea", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameCardGameTextArea)));
-            engine.SetValue("TableSpace", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGameTableSpace)));
-            engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGamePile)));
-            engine.SetValue("GameUtils", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameUtils)));
-            engine.SetValue("Shuff", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.Shuff)));
+                 engine.SetValue("TableTextArea", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameCardGameTextArea)));
+                 engine.SetValue("TableSpace", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGameTableSpace)));
+                 engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGamePile)));
+                 engine.SetValue("GameUtils", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameUtils)));
+                 engine.SetValue("Shuff", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.Shuff)));
 
+                 try
+                 {
 
-            var sevens = File.ReadAllText("js/sevens.js");
-            var c = executeES6(engine, sevens);
-            c = c.Execute("var cg=new CardGame()");
+                     var sevens = File.ReadAllText("js/sevens.js");
+                     var c = executeES6(engine, sevens);
+                     c = c.Execute("var cg=new CardGame()");
 
-            c.GetValue("cg").AsObject().Get("__init__").Invoke(c.GetValue("cg"), new JsValue[] { 12 });
+                     c.GetValue("cg").AsObject().Get("__init__").Invoke(c.GetValue("cg"), new JsValue[] { 12 });
 
-            c = c.Execute("var _=new GameUtils()");
-            c = c.Execute("var shuff=new Shuff()");
-            c = c.Execute("var sevens=new Sevens()");
+                     c = c.Execute("var _=new GameUtils()");
+                     c = c.Execute("var shuff=new Shuff()");
+                     c.GetValue("shuff").AsObject().Get("SetThread").Invoke(c.GetValue("shuff"), new JsValue[] { JsValue.FromObject(engine, thread) });
+                     c = c.Execute("var sevens=new Sevens()");
 
-            c = c.Execute("sevens.constructor(cg);");
+                     c = c.Execute("sevens.constructor(cg);");
 
-            c = c.Execute("sevens.runGame(cg);");
+                     c = c.Execute("sevens.runGame(cg);");
 
-            //            });
-            //            thread.Start();
+                 }
+                 catch (Exception exc)
+                 {
+                     if (exc.InnerException is JavaScriptException)
+                     {
+                         var location = engine.GetLastSyntaxNode().Location;
+                         var javaScriptException = (exc.InnerException as JavaScriptException);
+                         throw new ApplicationException($"{javaScriptException.Error} " +
+                                                                   $"({location.Source}: Line {location.Start.Line}, Column {location.Start.Column} to Line {location.End.Line}, Column {location.End.Column})", exc);
 
+                     }
+                 }
 
-            /*mcc = mcc.Execute("var f=new foo()");
-            var fva = mcc.GetValue("f");
-            var cd = fva.AsObject().Get("bar").Invoke(200);
-            var nn = cd.AsNumber();*/
-
+             });
+            thread.Start();
 
             Console.WriteLine("Press any [Enter] to close the host.");
             Console.ReadLine();

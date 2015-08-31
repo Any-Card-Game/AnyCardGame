@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Common.Data;
 using Jint.Runtime.Interop;
 
@@ -9,6 +10,11 @@ namespace GameServer.CardGameLibrary
 
     public   class Shuff
     {
+        private Thread thread;
+        public void SetThread(Thread t)
+        {
+            thread = t;
+        }
         public   int AskQuestion(CardGameUser user, string question, string[] answers, GameCardGame cardGame)
         {
             cardGame.Emulating = false;
@@ -17,9 +23,11 @@ namespace GameServer.CardGameLibrary
                 cardGame.Emulating = true;
                 return cardGame.EmulatedAnswers[cardGame.EmulatedAnswerIndex++].Value; //todo .value
             }
+            thread.Suspend();
+
 //            var m = new CardGameQuestion(user, question, answers, cardGame);
 
-//            var answer = Fiber<CardGameAnswer>.Yield(new FiberYieldResponse(FiberYieldResponseType.AskQuestion, m));
+            //            var answer = Fiber<CardGameAnswer>.Yield(new FiberYieldResponse(FiberYieldResponseType.AskQuestion, m));
             cardGame.EmulatedAnswerIndex++;
             return answers.Length>0?1:0;
         }
@@ -172,35 +180,15 @@ namespace GameServer.CardGameLibrary
     {
         public int[] Numbers(int start, int finish)
         {
-            var items = new int[finish - start];
+            var items = new int[finish - start+1];
 
-            for (var i = 0; i < finish - start; i++)
+            for (var i = 0; i <= finish - start; i++)
             {
                 items[i] = start + i;
             }
             return items;
         }
-
-        public object Clone(object obj) //::dynamic okay
-        {
-            /*  if (obj == null || (!(obj is Array) && (obj.GetType() != typeof(object) && "({}).toString.call(obj) != '[object Function]'".eval()))) return obj;
-
-              var ob = (Dictionary<string, object>)obj;
-              dynamic temp = null; //::dynamic okay
-
-              if (obj is Array)
-                  temp = new dynamic[0]; //::dynamic okay
-              else
-                  temp = new object();
-
-              foreach (var key in ob.Keys)
-              {
-                  temp[key] = Clone(ob[key]);
-              }*/
-
-            return obj;
-        }
-
+        
         public object[] CloneArray(IEnumerable<object> obj)
         {
             var arr = obj.ToArray();
@@ -213,7 +201,7 @@ namespace GameServer.CardGameLibrary
         {
             return (int)j;
         }
-        Random random = new Random();
+        Random random = new Random(Guid.NewGuid().ToByteArray()[0]);//todo better random
         public double Random()
         {
             return random.NextDouble();
