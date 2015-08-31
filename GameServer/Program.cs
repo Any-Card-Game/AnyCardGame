@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Jint;
 using Jint.Native;
@@ -10,136 +12,50 @@ using Jint.Native.Function;
 using Jint.Native.Object;
 using Jint.Native.String;
 using Jint.Runtime;
+using Jint.Runtime.Debugger;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 
 namespace GameServer
 {
-   
-
-    public sealed class SalConstructor : FunctionInstance, IConstructor
-    {
-        private readonly Engine _engine;
-        public SalPrototype PrototypeObject { get; private set; }
-
-        private SalConstructor(Engine engine) : base(engine, null, null, false)
-        {
-            _engine = engine;
-        }
-
-        public static SalConstructor CreateObjectConstructor(Engine engine)
-        {
-            SalConstructor objectConstructor = new SalConstructor(engine);
-            objectConstructor.Extensible = true;
-            objectConstructor.PrototypeObject = SalPrototype.CreatePrototypeObject(engine, objectConstructor);
-            objectConstructor.FastAddProperty("length", (JsValue)1.0, false, false, false);
-            objectConstructor.FastAddProperty("prototype", (JsValue)((ObjectInstance)objectConstructor.PrototypeObject), false, false, false);
-            return objectConstructor;
-        }
-
-        public void Configure()
-        {
-            Prototype = Engine.Function.PrototypeObject;
-
-            Prototype.FastAddProperty("shoes", new ClrFunctionInstance(Engine, GetPrototypeOf, 1), true, false, true);
-        }
-
-        public JsValue GetPrototypeOf(JsValue thisObject, JsValue[] arguments)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override JsValue Call(JsValue thisObject, JsValue[] arguments)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ObjectInstance Construct(JsValue[] arguments)
-        {
-            var name = arguments[0].AsString();
-            return (ObjectInstance) this.PrototypeObject;
-
-        }
-    }
-    public sealed class SalPrototype : ObjectInstance
-    {
-        private SalPrototype(Engine engine)
-          : base(engine)
-        {
-        }
-
-        public static SalPrototype CreatePrototypeObject(Engine engine, SalConstructor objectConstructor)
-        {
-            SalPrototype objectPrototype1 = new SalPrototype(engine);
-            objectPrototype1.Extensible = true;
-            SalPrototype objectPrototype2 = objectPrototype1;
-            objectPrototype2.FastAddProperty("constructor", (JsValue)((ObjectInstance)objectConstructor), true, false, true);
-            objectPrototype2.FastAddProperty("shoes", (JsValue)((ObjectInstance)new ClrFunctionInstance(engine, new Func<JsValue, JsValue[], JsValue>(getThing))), true, false, true);
-            return objectPrototype2;
-            
-        }
-
-        private static JsValue getThing(JsValue arg1, JsValue[] arg2)
-        {
-            /*      ObjectInstance objectInstance = TypeConverter.ToObject(this.Engine, thisObject);
-                  double num = (double) TypeConverter.ToUint32((JsValue) TypeConverter.ToNumber(objectInstance.Get("length")));
-                  foreach (JsValue jsValue in arguments)
-                  {
-                    objectInstance.Put(TypeConverter.ToString((JsValue) num), jsValue, true);
-                    ++num;
-                  }
-                  objectInstance.Put("length", (JsValue) num, true);
-                  return (JsValue) num;*/
-            return arg2[0].AsNumber()*12;
-        }
-
-        public void Configure()
-        {
-        }
-
-    }
-
-
-    public class Pile
-    {
-        public string Name { get; set; }
-        public Pile(string name)
-        {
-            Name = name;
-        }
-
-        public int shoes(int item)
-        {
-            return item*12;
-        }
-    }
-
     class Program
     {
-        static Jint.Engine engine = new Jint.Engine();
         static void Main(string[] args)
         {
+
+            //            var thread=new Thread(() =>
+            //            {
+            Jint.Engine engine = new Jint.Engine();
             engine.SetValue("log", new Action<object>(a =>
             {
-                
+                 Console.WriteLine(a);
             }));
-            //todo make a generic way to add new classes and shit
 
 
-            engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(Pile)));
-//            engine = engine.Execute("var j=new Pile('spades');log(j.doThing(15));");
-//            var cdc = engine.GetValue("j");
+            engine.SetValue("CardGame", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameCardGame)));
+            engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGamePile)));
 
+            engine.SetValue("TableTextArea", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameCardGameTextArea)));
+            engine.SetValue("TableSpace", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGameTableSpace)));
+            engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGamePile)));
+            engine.SetValue("GameUtils", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameUtils)));
 
 
             var sevens = File.ReadAllText("js/sevens.js");
-            var c = executeES6(sevens);
+            var c = executeES6(engine, sevens);
+            c = c.Execute("var cg=new CardGame()");
 
+            c.GetValue("cg").AsObject().Get("__init__").Invoke(c.GetValue("cg"), new JsValue[] { 12 });
 
+            c = c.Execute("var _=new GameUtils()");
+            c = c.Execute("var sevens=new Sevens()");
 
-            var mcc = c.Execute("var sevens=new Sevens()");
-            //do stuff to it
-            mcc = mcc.Execute("sevens.constructor();");
+            c = c.Execute("sevens.constructor(cg);");
+
+            c = c.Execute("sevens.runGame(cg);");
+
+            //            });
+            //            thread.Start();
 
 
             /*mcc = mcc.Execute("var f=new foo()");
@@ -152,17 +68,21 @@ namespace GameServer
             Console.ReadLine();
         }
 
-        private static Engine executeES6(string text)
+        private static Engine executeES6(Engine engine, string text)
         {
-            var typescript = File.ReadAllText("js/typescript/typescript.js");
-            var mc = engine.Execute(typescript);
-            var tsc = mc.GetValue("ts");
-            var cc = tsc.AsObject().Get("transpile");
+            /*
+                        var typescript = File.ReadAllText("js/typescript/typescript.js");
+                        var mc = engine.Execute(typescript);
+                        var tsc = mc.GetValue("ts");
+                        var cc = tsc.AsObject().Get("transpile");
 
-            var c = cc.Invoke(text).AsString();
+                        var c = cc.Invoke(text).AsString();
 
-            var mcc = engine.Execute(c);
+                        var mcc = engine.Execute(c);
+            */
+            var mcc = engine.Execute(text);
             return mcc;
         }
     }
+
 }

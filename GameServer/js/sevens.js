@@ -1,39 +1,60 @@
 ﻿function Sevens() {
     var self = this; 
-    self.constructor = function () {
+    self.constructor = function (cardGame) {
+
+        self.cardGame = cardGame;
 
         self.spades = new Pile('spades');
         self.clubs = new Pile('clubs');
         self.hearts = new Pile('hearts');
         self.diamonds = new Pile('diamonds');
-        log(self.spades.shoes(12));
-/*
+
         self.cardGame.getSpaceByName('clubs').assignPile(self.clubs);
         self.cardGame.getSpaceByName('spades').assignPile(self.spades);
         self.cardGame.getSpaceByName('hearts').assignPile(self.hearts);
-        self.cardGame.getSpaceByName('diamonds').assignPile(self.diamonds);*/
+        self.cardGame.getSpaceByName('diamonds').assignPile(self.diamonds);
 
     }; 
 
     self.runGame = function () {
         if (!self.cardGame.users || self.cardGame.users.length == 0) {
-            console.log("baaad");
+            log("baaad");
             return true;
         }
-        _.numbers(1, 20).foreach(function() {
+
+ /*       _.numbers(1, 20).forEach(function () {
             self.cardGame.deck.cards = self.shuffle(self.cardGame.deck.cards);
-        });
+        });*/
 
-        self.cardGame.users.foreach(function(u, ind) {
+        var tableTextArea = new TableTextArea({ name: 'shoes' });
+        self.cardGame.textAreas.push(tableTextArea);
+        self.cardGame.textAreas.push(tableTextArea);
+        self.cardGame.textAreas.push(tableTextArea);
+        log(self.cardGame.textAreas.length);
+        log(self.cardGame.textAreas);
+        log(self.cardGame);
+
+
+        self.cardGame.users.forEach(function (u, ind,o) {
             //shuff.log('::' + u.userName);
+            var spaceByName = self.cardGame.getSpaceByName('User' + ind);
+            log('2c')
+            log(u.cards)
+            log('User' + ind+"::")
+            log(spaceByName)
 
-            self.cardGame.getSpaceByName('User' + ind).assignPile(u.cards).assignUser(u); 
+            var assignPile = spaceByName.assignPile(u.cards);
+            log('3c')
+
+            assignPile.assignUser(u);
+            log('1c')
             self.cardGame.getTextByName('User' + ind).text = u.userName; 
         });
+        log('3');
 
 
         while (self.cardGame.deck.cards.length > 0) {
-            self.cardGame.users.foreach(function(u) {
+            self.cardGame.users.forEach(function(u) {
                 if (self.cardGame.deck.cards.length > 0) {
                     self.cardGame.deck.cards[0].state = 2;
                     u.cards.cards.push(self.cardGame.deck.cards[0]);
@@ -42,8 +63,8 @@
             });
         }
 
-
-        self.cardGame.users.foreach(function(u) {
+        log('here');
+        self.cardGame.users.forEach(function(u) {
             u.cards.cards.sortCards();
         });
 
@@ -51,7 +72,7 @@
         var CardNames = ['Ace', 'Deuce', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Jack', 'Queen', 'King'];
 
         while (true) {
-            var result = self.cardGame.users.foreach(function(u) {
+            var result = self.cardGame.users.forEach(function(u) {
 
                 var usable = u.cards.cards.where(function(c) {
                     return (c.type == 3 && (c.value == 6 || self.spades.cards.any(function(_c) {
@@ -69,7 +90,7 @@
                 });
                 var answers = [];
                 answers.push('Skip');
-                usable.sortCards().foreach(function(card) {
+                usable.sortCards().forEach(function(card) {
                     answers.push(CardNames[card.value] + ' Of ' + CardTypes[card.type]);
                 });
 
@@ -218,17 +239,14 @@
 
     self.shuffle = function(arbs) {
         var indes = 0;
-        var vafb = _.clone(arbs);
-
-        vafb.foreach(function(fs) {
+        var vafb = _.cloneArray(arbs);
+        vafb.forEach(function(fs) {
             var vm = _.floor(_.random() * vafb.length);
             vafb[indes] = vafb[vm];
             indes++;
             vafb[vm] = fs;
         });
-
         arbs = vafb;
-
         return arbs;
     };
     return self;

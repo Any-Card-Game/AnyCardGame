@@ -183,7 +183,7 @@ var ts;
         SyntaxKind[SyntaxKind["IndexSignature"] = 147] = "IndexSignature";
         // Type
         SyntaxKind[SyntaxKind["TypePredicate"] = 148] = "TypePredicate";
-        SyntaxKind[SyntaxKind["TypeReference"] = 149] = "TypeReference";
+        SyntaxKind[SyntaxKind["TypeReference"] = 149] = "AcgTypeReference";
         SyntaxKind[SyntaxKind["FunctionType"] = 150] = "FunctionType";
         SyntaxKind[SyntaxKind["ConstructorType"] = 151] = "ConstructorType";
         SyntaxKind[SyntaxKind["TypeQuery"] = 152] = "TypeQuery";
@@ -5675,7 +5675,7 @@ var ts;
     function getEntityNameFromTypeNode(node) {
         if (node) {
             switch (node.kind) {
-                case 149 /* TypeReference */:
+                case 149 /* AcgTypeReference */:
                     return node.typeName;
                 case 186 /* ExpressionWithTypeArguments */:
                     return node.expression;
@@ -7263,7 +7263,7 @@ var ts;
                     visitNode(cbNode, node.type) ||
                     visitNode(cbNode, node.equalsGreaterThanToken) ||
                     visitNode(cbNode, node.body);
-            case 149 /* TypeReference */:
+            case 149 /* AcgTypeReference */:
                 return visitNode(cbNode, node.typeName) ||
                     visitNodes(cbNodes, node.typeArguments);
             case 148 /* TypePredicate */:
@@ -8859,7 +8859,7 @@ var ts;
                 node_1.type = parseType();
                 return finishNode(node_1);
             }
-            var node = createNode(149 /* TypeReference */, typeName.pos);
+            var node = createNode(149 /* AcgTypeReference */, typeName.pos);
             node.typeName = typeName;
             if (!scanner.hasPrecedingLineBreak() && token === 25 /* LessThanToken */) {
                 node.typeArguments = parseBracketedList(18 /* TypeArguments */, parseType, 25 /* LessThanToken */, 27 /* GreaterThanToken */);
@@ -14785,7 +14785,7 @@ var ts;
                     case 150 /* FunctionType */:
                     case 151 /* ConstructorType */:
                     case 153 /* TypeLiteral */:
-                    case 149 /* TypeReference */:
+                    case 149 /* AcgTypeReference */:
                     case 154 /* ArrayType */:
                     case 155 /* TupleType */:
                     case 156 /* UnionType */:
@@ -16385,7 +16385,7 @@ var ts;
         function checkTypeParameterHasIllegalReferencesInConstraint(typeParameter) {
             var typeParameterSymbol;
             function check(n) {
-                if (n.kind === 149 /* TypeReference */ && n.typeName.kind === 67 /* Identifier */) {
+                if (n.kind === 149 /* AcgTypeReference */ && n.typeName.kind === 67 /* Identifier */) {
                     var links = getNodeLinks(n);
                     if (links.isIllegalTypeReferenceInConstraint === undefined) {
                         var symbol = resolveName(typeParameter, n.typeName.text, 793056 /* Type */, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined);
@@ -16472,7 +16472,7 @@ var ts;
             var links = getNodeLinks(node);
             if (!links.resolvedType) {
                 // We only support expressions that are simple qualified names. For other expressions this produces undefined.
-                var typeNameOrExpression = node.kind === 149 /* TypeReference */ ? node.typeName :
+                var typeNameOrExpression = node.kind === 149 /* AcgTypeReference */ ? node.typeName :
                     ts.isSupportedExpressionWithTypeArguments(node) ? node.expression :
                         undefined;
                 var symbol = typeNameOrExpression && resolveEntityName(typeNameOrExpression, 793056 /* Type */) || unknownSymbol;
@@ -16555,7 +16555,7 @@ var ts;
             return globalESSymbolConstructorSymbol || (globalESSymbolConstructorSymbol = getGlobalValueSymbol("Symbol"));
         }
         /**
-          * Creates a TypeReference for a generic `TypedPropertyDescriptor<T>`.
+          * Creates a AcgTypeReference for a generic `TypedPropertyDescriptor<T>`.
           */
         function createTypedPropertyDescriptorType(propertyType) {
             var globalTypedPropertyDescriptorType = getGlobalTypedPropertyDescriptorType();
@@ -16814,7 +16814,7 @@ var ts;
                     return voidType;
                 case 9 /* StringLiteral */:
                     return getTypeFromStringLiteral(node);
-                case 149 /* TypeReference */:
+                case 149 /* AcgTypeReference */:
                     return getTypeFromTypeReference(node);
                 case 148 /* TypePredicate */:
                     return booleanType;
@@ -23185,9 +23185,9 @@ var ts;
             // When we are emitting type metadata for decorators, we need to try to check the type
             // as if it were an expression so that we can emit the type in a value position when we
             // serialize the type metadata.
-            if (node && node.kind === 149 /* TypeReference */) {
+            if (node && node.kind === 149 /* AcgTypeReference */) {
                 var root = getFirstIdentifier(node.typeName);
-                var meaning = root.parent.kind === 149 /* TypeReference */ ? 793056 /* Type */ : 1536 /* Namespace */;
+                var meaning = root.parent.kind === 149 /* AcgTypeReference */ ? 793056 /* Type */ : 1536 /* Namespace */;
                 // Resolve type so we know which symbol is referenced
                 var rootSymbol = resolveName(root, root.text, meaning | 8388608 /* Alias */, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined);
                 // Resolved symbol is alias
@@ -25052,7 +25052,7 @@ var ts;
                 case 143 /* GetAccessor */:
                 case 144 /* SetAccessor */:
                     return checkAccessorDeclaration(node);
-                case 149 /* TypeReference */:
+                case 149 /* AcgTypeReference */:
                     return checkTypeReferenceNode(node);
                 case 148 /* TypePredicate */:
                     return checkTypePredicate(node);
@@ -25435,7 +25435,7 @@ var ts;
             while (node.parent && node.parent.kind === 133 /* QualifiedName */) {
                 node = node.parent;
             }
-            return node.parent && node.parent.kind === 149 /* TypeReference */;
+            return node.parent && node.parent.kind === 149 /* AcgTypeReference */;
         }
         function isHeritageClauseElementIdentifier(entityName) {
             var node = entityName;
@@ -25513,7 +25513,7 @@ var ts;
                 }
             }
             else if (isTypeReferenceIdentifier(entityName)) {
-                var meaning = entityName.parent.kind === 149 /* TypeReference */ ? 793056 /* Type */ : 1536 /* Namespace */;
+                var meaning = entityName.parent.kind === 149 /* AcgTypeReference */ ? 793056 /* Type */ : 1536 /* Namespace */;
                 // Include aliases in the meaning, this ensures that we do not follow aliases to where they point and instead
                 // return the alias symbol.
                 meaning |= 8388608 /* Alias */;
@@ -27342,7 +27342,7 @@ var ts;
                     return writeTextOfNode(currentSourceFile, type);
                 case 186 /* ExpressionWithTypeArguments */:
                     return emitExpressionWithTypeArguments(type);
-                case 149 /* TypeReference */:
+                case 149 /* AcgTypeReference */:
                     return emitTypeReference(type);
                 case 152 /* TypeQuery */:
                     return emitTypeQuery(type);
@@ -32911,7 +32911,7 @@ var ts;
                     case 129 /* SymbolKeyword */:
                         write("Symbol");
                         return;
-                    case 149 /* TypeReference */:
+                    case 149 /* AcgTypeReference */:
                         emitSerializedTypeReferenceNode(node);
                         return;
                     case 152 /* TypeQuery */:
@@ -33010,7 +33010,7 @@ var ts;
                                     if (parameterType.kind === 154 /* ArrayType */) {
                                         parameterType = parameterType.elementType;
                                     }
-                                    else if (parameterType.kind === 149 /* TypeReference */ && parameterType.typeArguments && parameterType.typeArguments.length === 1) {
+                                    else if (parameterType.kind === 149 /* AcgTypeReference */ && parameterType.typeArguments && parameterType.typeArguments.length === 1) {
                                         parameterType = parameterType.typeArguments[0];
                                     }
                                     else {
@@ -38908,7 +38908,7 @@ var ts;
     }
     ts.getNodeModifiers = getNodeModifiers;
     function getTypeArgumentOrTypeParameterList(node) {
-        if (node.kind === 149 /* TypeReference */ || node.kind === 166 /* CallExpression */) {
+        if (node.kind === 149 /* AcgTypeReference */ || node.kind === 166 /* CallExpression */) {
             return node.typeArguments;
         }
         if (ts.isFunctionLike(node) || node.kind === 212 /* ClassDeclaration */ || node.kind === 213 /* InterfaceDeclaration */) {
@@ -40091,7 +40091,7 @@ var ts;
                     return false;
                 }
                 switch (parent.kind) {
-                    case 149 /* TypeReference */:
+                    case 149 /* AcgTypeReference */:
                     case 169 /* TypeAssertionExpression */:
                     case 212 /* ClassDeclaration */:
                     case 184 /* ClassExpression */:
@@ -41328,7 +41328,7 @@ var ts;
                         return 17 /* OpenParenToken */;
                     }
                     break;
-                case 149 /* TypeReference */:
+                case 149 /* AcgTypeReference */:
                     if (node.typeArguments === list) {
                         return 25 /* LessThanToken */;
                     }
@@ -41591,7 +41591,7 @@ var ts;
             function getContainingList(node, sourceFile) {
                 if (node.parent) {
                     switch (node.parent.kind) {
-                        case 149 /* TypeReference */:
+                        case 149 /* AcgTypeReference */:
                             if (node.parent.typeArguments &&
                                 ts.rangeContainsStartEnd(node.parent.typeArguments, node.getStart(sourceFile), node.getEnd())) {
                                 return node.parent.typeArguments;
@@ -46679,7 +46679,7 @@ var ts;
             if (ts.isRightSideOfQualifiedNameOrPropertyAccess(node)) {
                 node = node.parent;
             }
-            return node.parent.kind === 149 /* TypeReference */ ||
+            return node.parent.kind === 149 /* AcgTypeReference */ ||
                 (node.parent.kind === 186 /* ExpressionWithTypeArguments */ && !ts.isExpressionWithTypeArgumentsInClassExtendsClause(node.parent));
         }
         function isNamespaceReference(node) {
@@ -46710,7 +46710,7 @@ var ts;
                 }
                 isLastClause = root.right === node;
             }
-            return root.parent.kind === 149 /* TypeReference */ && !isLastClause;
+            return root.parent.kind === 149 /* AcgTypeReference */ && !isLastClause;
         }
         function isInRightSideOfImport(node) {
             while (node.parent.kind === 133 /* QualifiedName */) {
