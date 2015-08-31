@@ -32,47 +32,61 @@ namespace GameServer
             AnswerManager answerResponse = new AnswerManager();
             thread = new BackgroundWorker();
             thread.WorkerReportsProgress = true;
-            thread.ProgressChanged += (a,b) =>
+            thread.ProgressChanged += (a, b) =>
             {
-                Thread.Sleep(1);
-                var questionc = (Tuple<Thread,CardGameQuestion>) b.UserState;
-                var question = questionc.Item2;
 
-                Console.WriteLine(question.User.UserName + ": " + question.Question);
-                foreach (var answer in question.Answers)
+                if (b.ProgressPercentage == 0)
                 {
-                    Console.WriteLine(answer);
+                    Thread.Sleep(1);
+                    var questionc = (Tuple<Thread, CardGameQuestion>)b.UserState;
+                    var question = questionc.Item2;
+
+                    Console.WriteLine(question.User.UserName + ": " + question.Question);
+                    foreach (var answer in question.Answers)
+                    {
+                        Console.WriteLine(answer);
+                    }
+                    answerResponse.Answer = 1;//int.Parse(Console.ReadKey().KeyChar.ToString());
+                    if ((questionc.Item1.ThreadState & ThreadState.Suspended) == ThreadState.Suspended)
+                    {
+                        questionc.Item1.Resume();
+                        return;
+                    }
+                    Console.WriteLine(questionc.Item1.ThreadState);
+                    Console.WriteLine(" SHould never get here");
+                    if ((questionc.Item1.ThreadState & ThreadState.Background) == ThreadState.Background)
+                    {
+                        questionc.Item1.Resume();
+                    }
                 }
-                answerResponse.Answer = 1;//int.Parse(Console.ReadKey().KeyChar.ToString());
-                if ((questionc.Item1.ThreadState & ThreadState.Suspended) == ThreadState.Suspended)
+                else if (b.ProgressPercentage == 1)
                 {
-                    questionc.Item1.Resume();
-                    return;
+                    var userc = (Tuple<Thread, CardGameUser>)b.UserState;
+                    var user = userc.Item2;
+
+                    Console.WriteLine(user.UserName + " Has won!");
+
                 }
-                Console.WriteLine(questionc.Item1.ThreadState);
-                Console.WriteLine(questionc.Item1.ThreadState);
-                if ((questionc.Item1.ThreadState & ThreadState.Background) == ThreadState.Background)
-                {
-                    questionc.Item1.Resume();
-                }
+
+
             };
 
 
             thread.DoWork += (t, cc) =>
-            { 
+            {
 
                 Jint.Engine engine = new Jint.Engine();
                 engine.SetValue("log", new Action<object>(a => { Console.WriteLine(a); }));
 
 
-                engine.SetValue("CardGame", TypeReference.CreateTypeReference(engine, typeof (CardGameLibrary.GameCardGame)));
-                engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof (CardGameLibrary.CardGamePile)));
+                engine.SetValue("CardGame", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameCardGame)));
+                engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGamePile)));
 
-                engine.SetValue("TableTextArea", TypeReference.CreateTypeReference(engine, typeof (CardGameLibrary.GameCardGameTextArea)));
-                engine.SetValue("TableSpace", TypeReference.CreateTypeReference(engine, typeof (CardGameLibrary.CardGameTableSpace)));
-                engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof (CardGameLibrary.CardGamePile)));
-                engine.SetValue("GameUtils", TypeReference.CreateTypeReference(engine, typeof (CardGameLibrary.GameUtils)));
-                engine.SetValue("Shuff", TypeReference.CreateTypeReference(engine, typeof (CardGameLibrary.Shuff)));
+                engine.SetValue("TableTextArea", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameCardGameTextArea)));
+                engine.SetValue("TableSpace", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGameTableSpace)));
+                engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGamePile)));
+                engine.SetValue("GameUtils", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameUtils)));
+                engine.SetValue("Shuff", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.Shuff)));
 
                 try
                 {
@@ -81,7 +95,7 @@ namespace GameServer
                     var c = executeES6(engine, sevens);
                     c = c.Execute("var cg=new CardGame()");
 
-                    c.GetValue("cg").AsObject().Get("__init__").Invoke(c.GetValue("cg"), new JsValue[] {12});
+                    c.GetValue("cg").AsObject().Get("__init__").Invoke(c.GetValue("cg"), new JsValue[] { 12 });
 
                     c = c.Execute("var _=new GameUtils()");
                     c = c.Execute("var shuff=new Shuff()");
@@ -89,7 +103,8 @@ namespace GameServer
                     {
                         JsValue.FromObject(engine, new CardGameDelegates()
                         {
-                            AskQuestionCallback = new AskQuestionDelegate(question => askQuestion(thread, answerResponse, question))
+                            AskQuestionCallback = question => askQuestion(thread, answerResponse, question),
+                            DeclareWinnerCallback = user => declareWinner(thread, user)
                         })
                     });
                     c = c.Execute("var sevens=new Sevens()");
@@ -119,11 +134,19 @@ namespace GameServer
             Console.ReadLine();
         }
 
+        private static void declareWinner(BackgroundWorker thread, CardGameUser user)
+        {
+            thread.ReportProgress(1, Tuple.Create(Thread.CurrentThread, user));
+            Console.WriteLine("Game over");
+            Thread.CurrentThread.Abort();
+            Console.WriteLine("Should never get here");
+        }
+
         private static CardGameAnswer askQuestion(BackgroundWorker thread, AnswerManager answerResponse, CardGameQuestion question)
         {
             thread.ReportProgress(0, Tuple.Create(Thread.CurrentThread, question));
             Thread.CurrentThread.Suspend();
-            return new CardGameAnswer() {Value = answerResponse.Answer };
+            return new CardGameAnswer() { Value = answerResponse.Answer };
         }
 
         private static Engine executeES6(Engine engine, string text)

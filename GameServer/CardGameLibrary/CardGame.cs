@@ -8,10 +8,12 @@ using Jint.Runtime.Interop;
 namespace GameServer.CardGameLibrary
 {
     public delegate CardGameAnswer AskQuestionDelegate(CardGameQuestion question);
+    public delegate void DeclareWinnerDelegate(CardGameUser user);
 
     public class CardGameDelegates
     {
         public AskQuestionDelegate AskQuestionCallback { get; set; }
+        public DeclareWinnerDelegate DeclareWinnerCallback { get; set; }
 
     }
     public   class Shuff
@@ -39,12 +41,9 @@ namespace GameServer.CardGameLibrary
 
         public   void DeclareWinner(CardGameUser user)
         {
+            cardGameDelegates.DeclareWinnerCallback(user);
 //            Fiber<FiberYieldResponse>.Yield(new FiberYieldResponse(FiberYieldResponseType.GameOver));
-        }
-        public   void GameOver()
-        {
-//            Fiber<FiberYieldResponse>.Yield(new FiberYieldResponse(FiberYieldResponseType.GameOver));
-        }
+        } 
         public   void PlayersLeave(Action<List<CardGameUser>> usersLeft)
         {
 
