@@ -14,7 +14,7 @@ namespace Common.Redis
 {
     public class RedisClient
     {
-        private Dictionary<RedisChannels, Action<RedisMessage>> subscriptions = new Dictionary<RedisChannels, Action<RedisMessage>>();
+        private Dictionary<string, Action<RedisMessage>> subscriptions = new Dictionary<string, Action<RedisMessage>>();
         private IDatabase database;
         private ISubscriber subscriber;
         private LateTaskManager<RedisMessage> lateTaskManager;
@@ -24,13 +24,21 @@ namespace Common.Redis
         {
             var redisIP = "198.211.107.101";
             var redisPort = 6379;
-            ConnectionMultiplexer redis = ConnectionMultiplexer.Connect($"{redisIP}:{redisPort}");
+            var options = ConfigurationOptions.Parse($"{redisIP}:{redisPort}");
+            options.SyncTimeout = 100*1000;
+            ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(options);
             database = redis.GetDatabase();
+            
             subscriber = redis.GetSubscriber();
             lateTaskManager = new LateTaskManager<RedisMessage>();
         }
 
         public void Subscribe(RedisChannels channel, Action<RedisMessage> resolve)
+        {
+            subscriptions.Add(channel.ToString(), resolve);
+            subscriber.Subscribe(channel.ToString(), onReceiveMessage);
+        }
+        public void Subscribe(string channel, Action<RedisMessage> resolve)
         {
             subscriptions.Add(channel, resolve);
             subscriber.Subscribe(channel.ToString(), onReceiveMessage);
@@ -44,6 +52,8 @@ namespace Common.Redis
         {
             string work = (string)database.ListRightPop($"{(string)channel}-bl");
             if (work == null) return;
+            Console.WriteLine("Receiving Message: " + channel + "    " + work);
+            Console.WriteLine();
 
 
             RedisMessage message = JsonConvert.DeserializeObject<RedisMessage>(work, new JsonSerializerSettings()
@@ -58,9 +68,9 @@ namespace Common.Redis
             }
             else
             {
-                if (subscriptions[Utils.Utils.ParseEnum<RedisChannels>(channel)] != null)
+                if (subscriptions[channel] != null)
                 {
-                    subscriptions[Utils.Utils.ParseEnum<RedisChannels>(channel)](message);
+                    subscriptions[channel](message);
                 }
             }
         }
@@ -75,8 +85,27 @@ namespace Common.Redis
                 TypeNameHandling = TypeNameHandling.Objects
             });
 
+            Console.WriteLine("Sending Message: " + channel + "    " + str);
+            Console.WriteLine();
+
             database.ListLeftPush($"{channel}-bl", str);
             subscriber.Publish(channel.ToString(), "");
+        }
+        public void SendMessage(string channel, RedisMessage message = null)
+        {
+
+            message = message ?? new DefaultRedisMessage();
+
+            string str = JsonConvert.SerializeObject(message, new JsonSerializerSettings()
+            {
+                TypeNameHandling = TypeNameHandling.Objects
+            });
+
+            Console.WriteLine("Sending Message: " + channel + "    " + str);
+            Console.WriteLine();
+
+            database.ListLeftPush($"{channel}-bl", str);
+            subscriber.Publish(channel, "");
         }
 
         public Task<RedisMessage> AskQuestion(RedisChannels channelEnum, RedisMessage message = null)
@@ -90,11 +119,13 @@ namespace Common.Redis
                 TypeNameHandling = TypeNameHandling.Objects
             });
 
+            Console.WriteLine("Asking Question: " + channel + "    " + str);
+            Console.WriteLine();
             database.ListLeftPush($"{channel}-bl", str);
             subscriber.Publish(channel, "");
 
             return lateTaskManager.Build(message.Guid);
-        }
+        } 
     }
 
 }

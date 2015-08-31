@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Common.Redis;
+using Common.Redis.RedisMessages;
 using GameServer.CardGameLibrary;
 using Jint;
 using Jint.Native;
@@ -19,51 +21,60 @@ using Jint.Runtime.Interop;
 
 namespace GameServer
 {
-    public class AnswerManager
+    public class GameManager
     {
+        public GameManager(string gameId)
+        {
+
+            GameId = gameId;
+        }
+
+        public string GameId { get; set; }
+        public Thread Thread { get; set; }
         public int Answer { get; set; }
+        public CreateNewGameRequest InitialRequest { get; set; }
     }
-    class Program
+    class GameServerProgram
     {
+        private static Dictionary<string, GameManager> games = new Dictionary<string, GameManager>();
+        private static RedisClient client;
+        static string gameServerKey = Guid.NewGuid().ToString("N");
 
         static void Main(string[] args)
         {
-            int totalGames = 500;
-            ThreadPool.SetMinThreads(500, 500);
-            for (int i = 0; i < totalGames; i++)
-            {
-                runThing(i);
-            }
-            DateTime now=DateTime.Now;
-            DateTime startNow=DateTime.Now;
-            bool first = false;
-            while (true)
-            {
-                if (answers == 0)
-                {
-                    continue;
-                }
-                else
-                {
-                    if (!first)
-                    {
-                        Console.WriteLine("First");
-                        first = true;
-                        startNow = DateTime.Now;
-                        now = DateTime.Now;
-                    }
-                    if (now.AddSeconds(1) <= DateTime.Now)
-                    {
-                        if (GamesDone == totalGames)
-                        {
-                            break;
-                        }
-                        now = DateTime.Now;
-                        Console.WriteLine(answers/ (DateTime.Now - startNow).TotalSeconds +" Answers per second");
-                    }
-                }
 
-            }
+            Console.WriteLine("Game Server Key " + gameServerKey);
+
+
+            client = new RedisClient();
+            client.Subscribe(RedisChannels.CreateNewGameRequest, request =>
+            {
+
+                var gameId = Guid.NewGuid().ToString("N");
+                var createNewGameRequest = (CreateNewGameRequest)request;
+                GameManager gameManager = new GameManager(gameId) {InitialRequest = createNewGameRequest};
+
+                games.Add(gameId, runThing(gameManager));
+
+                client.SendMessage("GameUpdate" + createNewGameRequest.GatewayKey, new GameUpdateRedisMessage()
+                {
+                    GameId = gameId,
+                    UserKey = createNewGameRequest.UserKey,
+                    GameServer = gameServerKey,
+                    GameStatus = GameStatus.Started
+                });
+            });
+
+
+            client.Subscribe("GameServer" + gameServerKey, request =>
+             {
+                 var gameServerResponse = (GameServerRedisMessage)request;
+                 games[gameServerResponse.GameId].Answer = gameServerResponse.AnswerIndex;
+                 games[gameServerResponse.GameId].Thread.Resume();
+             });
+
+
+
 
             Console.WriteLine("Press any [Enter] to close the host.");
             Console.ReadLine();
@@ -71,10 +82,9 @@ namespace GameServer
 
         private static int answers = 0;
         private static int GamesDone = 0;
-        private static void runThing(int gameId)
+        private static GameManager runThing(GameManager gameManager)
         {
             BackgroundWorker thread = null;
-            AnswerManager answerResponse = new AnswerManager();
             thread = new BackgroundWorker();
             thread.WorkerReportsProgress = true;
             int questionIndex = 0;
@@ -83,32 +93,32 @@ namespace GameServer
                 if (b.ProgressPercentage == 0)
                 {
                     answers++;
+                    //                                    Console.WriteLine("GAME INDEX::::" + gameId+"::::::"+ questionIndex++);
+                    var questionc = (CardGameQuestion)b.UserState;
 
-//                                    Console.WriteLine("GAME INDEX::::" + gameId+"::::::"+ questionIndex++);
-                    var questionc = (Tuple<Thread, CardGameQuestion>)b.UserState;
-                    var question = questionc.Item2;
-                    //                    Console.WriteLine(question.User.UserName + ": " + question.Question);
-                    foreach (var answer in question.Answers)
+                    client.SendMessage("GameUpdate" + gameManager.InitialRequest.GatewayKey, new GameUpdateRedisMessage()
                     {
-                        //                        Console.WriteLine(answer);
-                    }
-                    answerResponse.Answer = 1; //int.Parse(Console.ReadKey().KeyChar.ToString());
-                    while ((questionc.Item1.ThreadState & ThreadState.Suspended) != ThreadState.Suspended)
-                    {
-                        Thread.Sleep(10);
-                    }
+                        GameServer = gameServerKey,
+                        GameId = gameManager.GameId,
+                        UserKey = gameManager.InitialRequest.UserKey,
+                        Question = new CardGameQuestionTransport()
+                        {
+                            User = questionc.User.UserName,
+                            Question = questionc.Question,
+                            Answers = questionc.Answers,
+                        },
+                        GameStatus = GameStatus.AskQuestion
+                    });
 
-                    if ((questionc.Item1.ThreadState & ThreadState.Suspended) == ThreadState.Suspended)
-                    {
-                        questionc.Item1.Resume();
-                    }
+
+
                 }
                 else if (b.ProgressPercentage == 1)
                 {
                     GamesDone++;
-                    Console.WriteLine("GAME INDEX::::" + gameId + "::::::");
-                    var userc = (Tuple<Thread, CardGameUser>)b.UserState;
-                    var user = userc.Item2;
+                    Console.WriteLine("GAME INDEX::::" + gameManager.GameId + "::::::");
+                    var userc = (CardGameUser)b.UserState;
+                    var user = userc;
 
                     Console.WriteLine(user.UserName + " Has won!");
                 }
@@ -117,7 +127,8 @@ namespace GameServer
 
             thread.DoWork += (t, cc) =>
             {
-                Console.WriteLine("Started "+gameId);
+                gameManager.Thread = Thread.CurrentThread;
+                Console.WriteLine("Started " + gameManager.GameId);
                 Jint.Engine engine = new Jint.Engine();
                 engine.SetValue("log", new Action<object>(a => { Console.WriteLine(a); }));
 
@@ -145,14 +156,14 @@ namespace GameServer
                     {
                         JsValue.FromObject(engine, new CardGameDelegates()
                         {
-                            AskQuestionCallback = question => askQuestion(thread, answerResponse, question),
+                            AskQuestionCallback = question => askQuestion(thread, gameManager, question),
                             DeclareWinnerCallback = user => declareWinner(thread, user)
                         })
                     });
                     c = c.Execute("var sevens=new Sevens()");
 
                     c = c.Execute("sevens.constructor(cg);");
-                    Console.WriteLine("Running game "+gameId);
+                    Console.WriteLine("Running game " + gameManager.GameId);
 
                     c = c.Execute("sevens.runGame(cg);");
                 }
@@ -169,21 +180,22 @@ namespace GameServer
             };
 
             thread.RunWorkerAsync();
+            return gameManager;
         }
 
         private static void declareWinner(BackgroundWorker thread, CardGameUser user)
         {
-            thread.ReportProgress(1, Tuple.Create(Thread.CurrentThread, user));
+            thread.ReportProgress(1, user);
             Console.WriteLine("Game over");
             Thread.CurrentThread.Abort();
             Console.WriteLine("Should never get here");
         }
 
-        private static CardGameAnswer askQuestion(BackgroundWorker thread, AnswerManager answerResponse, CardGameQuestion question)
+        private static CardGameAnswer askQuestion(BackgroundWorker thread, GameManager gameResponse, CardGameQuestion question)
         {
-            thread.ReportProgress(0, Tuple.Create(Thread.CurrentThread, question));
+            thread.ReportProgress(0, question);
             Thread.CurrentThread.Suspend();
-            return new CardGameAnswer() { Value = answerResponse.Answer };
+            return new CardGameAnswer() { Value = gameResponse.Answer };
         }
 
         private static Engine executeES6(Engine engine, string text)

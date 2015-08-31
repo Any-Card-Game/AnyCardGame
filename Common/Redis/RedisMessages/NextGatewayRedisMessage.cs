@@ -15,17 +15,45 @@
     public enum RedisChannels
     {
         GetNextGatewayRequest,
-        GetNextGatewayResponse
+        GetNextGatewayResponse,
+        CreateNewGameRequest,
     }
 
     public class NextGatewayResponseRedisMessage : RedisMessage
     {
         public string GatewayUrl { get; set; }
     }
-    public class ThisRedditMessage : RedisMessage
+    public class CreateNewGameRequest : RedisMessage
     {
-        public int Foo { get; set; }
-        public int Bar { get; set; }
+        public string GatewayKey { get; set; }
+        public string UserKey { get; set; }
+        public string GameName { get; set; }
+    }
+    public class GameUpdateRedisMessage : RedisMessage
+    {
+        public string GameId { get; set; }
+        public GameStatus GameStatus { get; set; }
+        public CardGameQuestionTransport Question { get; set; }
+        public string GameServer { get; set; }
+        public string UserKey { get; set; }
+    }
+    public class GameServerRedisMessage : RedisMessage
+    {
+        public string GameId { get; set; }
+        public int AnswerIndex { get; set; }
+    }
+
+    public class CardGameQuestionTransport
+    {
+
+        public string User { get; set; }
+        public string Question { get; set; }
+        public string[] Answers { get; set; }
+    }
+    public enum GameStatus
+    {
+        Started,
+        AskQuestion
     }
 
 
