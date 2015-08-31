@@ -7,13 +7,19 @@ using Jint.Runtime.Interop;
 
 namespace GameServer.CardGameLibrary
 {
+    public delegate CardGameAnswer AskQuestionDelegate(CardGameQuestion question);
 
+    public class CardGameDelegates
+    {
+        public AskQuestionDelegate AskQuestionCallback { get; set; }
+
+    }
     public   class Shuff
     {
-        private Thread thread;
-        public void SetThread(Thread t)
+        private CardGameDelegates cardGameDelegates;
+        public void SetDelegates(CardGameDelegates t)
         {
-            thread = t;
+            cardGameDelegates = t;
         }
         public   int AskQuestion(CardGameUser user, string question, string[] answers, GameCardGame cardGame)
         {
@@ -23,13 +29,12 @@ namespace GameServer.CardGameLibrary
                 cardGame.Emulating = true;
                 return cardGame.EmulatedAnswers[cardGame.EmulatedAnswerIndex++].Value; //todo .value
             }
-            thread.Suspend();
 
-//            var m = new CardGameQuestion(user, question, answers, cardGame);
-
-            //            var answer = Fiber<CardGameAnswer>.Yield(new FiberYieldResponse(FiberYieldResponseType.AskQuestion, m));
+            var m = new CardGameQuestion(user, question, answers, cardGame);
+            var answer= cardGameDelegates.AskQuestionCallback(m);
             cardGame.EmulatedAnswerIndex++;
-            return answers.Length>0?1:0;
+            return answer == null ? 0 : answer.Value;
+
         }
 
         public   void DeclareWinner(CardGameUser user)
@@ -56,15 +61,9 @@ namespace GameServer.CardGameLibrary
         {
 //            Fiber<FiberYieldResponse>.Yield(new FiberYieldResponse(FiberYieldResponseType.Log, msg));
         }
-        public class BreakInfoObject
-        {
-            public bool IsLast { get; set; }
-            public int Line { get; set; }
-            public int Col { get; set; }
-            public int Funcdef { get; set; }
-        }
+      
 
-        public   void Break(BreakInfoObject breakInfo, GameCardGame cardGame, Func<string, string> varLookup)
+        public void Break(BreakInfoObject breakInfo, GameCardGame cardGame, Func<string, string> varLookup)
         {
             /*   if (cardGame.Emulating)
                    return;*/
@@ -172,6 +171,28 @@ namespace GameServer.CardGameLibrary
                 }
             }
 
+        }
+    }
+    public class BreakInfoObject
+    {
+        public bool IsLast { get; set; }
+        public int Line { get; set; }
+        public int Col { get; set; }
+        public int Funcdef { get; set; }
+    }
+    public class CardGameQuestion
+    {
+        public CardGameUser User { get; set; }
+        public string Question { get; set; }
+        public string[] Answers { get; set; }
+        public GameCardGame CardGame { get; set; }
+
+        public CardGameQuestion(CardGameUser user, string question, string[] answers, GameCardGame cardGame)
+        {
+            User = user;
+            Question = question;
+            Answers = answers;
+            CardGame = cardGame;
         }
     }
 

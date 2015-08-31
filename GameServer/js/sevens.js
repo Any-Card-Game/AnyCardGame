@@ -160,7 +160,6 @@
                         }
                     }
                 }
-                log('here10');
                 //shuff.log('asking question');
                 var de = shuff.askQuestion(u, 'Which card would you like to play?', answers, self.cardGame);
                 //shuff.log('asked question: ' + de);
