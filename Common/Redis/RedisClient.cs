@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define log
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -25,7 +27,7 @@ namespace Common.Redis
             var redisIP = "198.211.107.101";
             var redisPort = 6379;
             var options = ConfigurationOptions.Parse($"{redisIP}:{redisPort}");
-            options.SyncTimeout = 100*1000;
+            options.SyncTimeout = 10*1000;
             ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(options);
             database = redis.GetDatabase();
             
@@ -51,10 +53,15 @@ namespace Common.Redis
         private void onReceiveMessage(RedisChannel channel, RedisValue value)
         {
             string work = (string)database.ListRightPop($"{(string)channel}-bl");
-            if (work == null) return;
+            if (work == null)
+            {
+//                Console.WriteLine($"{channel} got thing, but no message");
+                return;
+            }
+#if log
             Console.WriteLine("Receiving Message: " + channel + "    " + work);
             Console.WriteLine();
-
+#endif
 
             RedisMessage message = JsonConvert.DeserializeObject<RedisMessage>(work, new JsonSerializerSettings()
             {
@@ -84,9 +91,11 @@ namespace Common.Redis
             {
                 TypeNameHandling = TypeNameHandling.Objects
             });
+#if log
 
             Console.WriteLine("Sending Message: " + channel + "    " + str);
             Console.WriteLine();
+#endif
 
             database.ListLeftPush($"{channel}-bl", str);
             subscriber.Publish(channel.ToString(), "");
@@ -101,8 +110,10 @@ namespace Common.Redis
                 TypeNameHandling = TypeNameHandling.Objects
             });
 
+#if log
             Console.WriteLine("Sending Message: " + channel + "    " + str);
             Console.WriteLine();
+#endif
 
             database.ListLeftPush($"{channel}-bl", str);
             subscriber.Publish(channel, "");
@@ -118,9 +129,11 @@ namespace Common.Redis
             {
                 TypeNameHandling = TypeNameHandling.Objects
             });
+#if log
 
             Console.WriteLine("Asking Question: " + channel + "    " + str);
             Console.WriteLine();
+#endif
             database.ListLeftPush($"{channel}-bl", str);
             subscriber.Publish(channel, "");
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -52,9 +53,10 @@ namespace GameServer
 
                 var gameId = Guid.NewGuid().ToString("N");
                 var createNewGameRequest = (CreateNewGameRequest)request;
-                GameManager gameManager = new GameManager(gameId) {InitialRequest = createNewGameRequest};
+                GameManager gameManager = new GameManager(gameId) { InitialRequest = createNewGameRequest };
 
                 games.Add(gameId, runThing(gameManager));
+                Console.WriteLine("New Game Request " + games.Count);
 
                 client.SendMessage("GameUpdate" + createNewGameRequest.GatewayKey, new GameUpdateRedisMessage()
                 {
@@ -116,11 +118,20 @@ namespace GameServer
                 else if (b.ProgressPercentage == 1)
                 {
                     GamesDone++;
-                    Console.WriteLine("GAME INDEX::::" + gameManager.GameId + "::::::");
+                    //                                    Console.WriteLine("GAME INDEX::::" + gameId+"::::::"+ questionIndex++);
                     var userc = (CardGameUser)b.UserState;
-                    var user = userc;
 
-                    Console.WriteLine(user.UserName + " Has won!");
+                    client.SendMessage("GameUpdate" + gameManager.InitialRequest.GatewayKey, new GameUpdateRedisMessage()
+                    {
+                        GameServer = gameServerKey,
+                        GameId = gameManager.GameId,
+                        UserKey = gameManager.InitialRequest.UserKey,
+                        GameStatus = GameStatus.GameOver
+                    });
+                    games.Remove(gameManager.GameId);
+                    Console.WriteLine("0Game over " + games.Count);
+
+                    //                    Console.WriteLine(userc.UserName + " Has won!");
                 }
             };
 
@@ -128,7 +139,7 @@ namespace GameServer
             thread.DoWork += (t, cc) =>
             {
                 gameManager.Thread = Thread.CurrentThread;
-                Console.WriteLine("Started " + gameManager.GameId);
+                //                Console.WriteLine("Started " + gameManager.GameId);
                 Jint.Engine engine = new Jint.Engine();
                 engine.SetValue("log", new Action<object>(a => { Console.WriteLine(a); }));
 
@@ -145,7 +156,7 @@ namespace GameServer
                 try
                 {
                     var sevens = File.ReadAllText("js/sevens.js");
-                    var c = executeES6(engine, sevens);
+                    Engine c = executeES6(engine, sevens);
                     c = c.Execute("var cg=new CardGame()");
 
                     c.GetValue("cg").AsObject().Get("__init__").Invoke(c.GetValue("cg"), new JsValue[] { 12 });
@@ -163,9 +174,13 @@ namespace GameServer
                     c = c.Execute("var sevens=new Sevens()");
 
                     c = c.Execute("sevens.constructor(cg);");
-                    Console.WriteLine("Running game " + gameManager.GameId);
+                    //                    Console.WriteLine("Running game " + gameManager.GameId);
 
                     c = c.Execute("sevens.runGame(cg);");
+                }
+                catch (GameOverException exc)
+                {
+                    Console.WriteLine("1Game Over");
                 }
                 catch (Exception exc)
                 {
@@ -178,7 +193,12 @@ namespace GameServer
                     }
                 }
             };
+            thread.RunWorkerCompleted += (o, e) =>
+             {
+                 Console.WriteLine("2thread concluded");
+                 Console.WriteLine("3Game Over       " + Process.GetCurrentProcess().Threads.Count);
 
+             };
             thread.RunWorkerAsync();
             return gameManager;
         }
@@ -186,9 +206,7 @@ namespace GameServer
         private static void declareWinner(BackgroundWorker thread, CardGameUser user)
         {
             thread.ReportProgress(1, user);
-            Console.WriteLine("Game over");
-            Thread.CurrentThread.Abort();
-            Console.WriteLine("Should never get here");
+            throw new GameOverException();
         }
 
         private static CardGameAnswer askQuestion(BackgroundWorker thread, GameManager gameResponse, CardGameQuestion question)
@@ -215,4 +233,7 @@ namespace GameServer
         }
     }
 
+    internal class GameOverException : Exception
+    {
+    }
 }

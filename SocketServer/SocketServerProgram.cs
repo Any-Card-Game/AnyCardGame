@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -14,7 +15,7 @@ namespace SocketServer
 {
     class SocketServerProgram
     {
-        private static RedisClient client;
+        private static RedisClient redisClient;
         private static string GatewayKey;
         static void Main(string[] args)
         {
@@ -23,38 +24,47 @@ namespace SocketServer
 
             GatewayKey = Guid.NewGuid().ToString("N");
             Console.WriteLine("Gateway Key "+GatewayKey);
-            client = new RedisClient();
-            client.Subscribe("Gateway" + GatewayKey, request =>
+            redisClient = new RedisClient();
+            redisClient.Subscribe("Gateway" + GatewayKey, request =>
               {
 
 
 
               });
-            client.Subscribe(RedisChannels.GetNextGatewayRequest, request =>
+            redisClient.Subscribe(RedisChannels.GetNextGatewayRequest, request =>
             {
-                client.SendMessage(RedisChannels.GetNextGatewayResponse, new NextGatewayResponseRedisMessage()
+                redisClient.SendMessage(RedisChannels.GetNextGatewayResponse, new NextGatewayResponseRedisMessage()
                 {
                     Guid = request.Guid,
                     GatewayUrl = url
                 });
             });
-            client.Subscribe("GameUpdate" + GatewayKey, request =>
+            redisClient.Subscribe("GameUpdate" + GatewayKey, request =>
             {
                 var rr = (GameUpdateRedisMessage)request;
-                Console.Write("Got update "+request);
                 users[rr.UserKey].GameData = rr;
 
                 string str;
                 switch (rr.GameStatus)
                 {
                     case GameStatus.Started:
+                        Console.WriteLine("Started" + rr.GameId);
                         str = JsonConvert.SerializeObject(new GameStartedSocketMessage()
                             , new JsonSerializerSettings()
                             {
                                 TypeNameHandling = TypeNameHandling.Objects
                             });
                         break;
+                    case GameStatus.GameOver:
+//                        Console.WriteLine("Game Over"+rr.GameId);
+                        str = JsonConvert.SerializeObject(new GameOverSocketMessage()
+                            , new JsonSerializerSettings()
+                            {
+                                TypeNameHandling = TypeNameHandling.Objects
+                            });
+                        break;
                     case GameStatus.AskQuestion:
+//                        Console.WriteLine("Ask Question" + rr.GameId);
                         str = JsonConvert.SerializeObject(new AskQuestionSocketMessage()
                         {
                             Question = rr.Question.Question,
@@ -110,7 +120,7 @@ namespace SocketServer
 
         private static void OnDisconnect(UserContext context)
         {
-            Console.WriteLine("Client disconnected From : " + context.ClientAddress.ToString());
+            Console.WriteLine("Client disconnected From : " + context.ClientAddress.ToString()+ "         "+Process.GetCurrentProcess().Threads.Count);
         }
 
         private static void OnReceive(UserContext context)
@@ -131,7 +141,8 @@ namespace SocketServer
             var uu = users[context.UniqueKey];
             if (obj is CreateNewGameRequestSocketMessage)
             {
-                client.SendMessage(RedisChannels.CreateNewGameRequest, new CreateNewGameRequest()
+//                Console.WriteLine("Starting Game socket");
+                redisClient.SendMessage(RedisChannels.CreateNewGameRequest, new CreateNewGameRequest()
                 {
                     GatewayKey = GatewayKey,
                     UserKey = context.UniqueKey,
@@ -140,7 +151,7 @@ namespace SocketServer
             }
             else if (obj is AnswerQuestionSocketMessage)
             {
-                client.SendMessage("GameServer" + uu.GameData.GameServer, new GameServerRedisMessage()
+                redisClient.SendMessage("GameServer" + uu.GameData.GameServer, new GameServerRedisMessage()
                 {
                     GameId = uu.GameData.GameId,
                     AnswerIndex = ((AnswerQuestionSocketMessage)obj).AnswerIndex
@@ -184,6 +195,9 @@ namespace SocketServer
     public class AnswerQuestionSocketMessage : SocketMessage
     {
         public int AnswerIndex { get; set; }
+    }
+    public class GameOverSocketMessage : SocketMessage
+    {
     }
 
     public class GameStartedSocketMessage : SocketMessage

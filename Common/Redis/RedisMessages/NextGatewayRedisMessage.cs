@@ -53,7 +53,8 @@
     public enum GameStatus
     {
         Started,
-        AskQuestion
+        AskQuestion,
+        GameOver
     }
 
 

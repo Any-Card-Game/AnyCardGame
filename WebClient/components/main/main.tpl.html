@@ -1,1 +1,11 @@
-main!{{model.shoes}}
+{{model.gameStarted?'Game Started':'Game Not Started'}}
+Total Games: {{model.totalGames}}
+
+<div ng-repeat="info in model.gameInfos">
+    <div>
+        {{info.User}}: {{info.Question}}
+    </div>
+    <div ng-repeat="answer in info.Answers">
+        {{answer}}
+    </div>
+</div>
