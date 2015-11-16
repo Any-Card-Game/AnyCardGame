@@ -24,8 +24,11 @@ namespace Common.Redis
 
         public RedisClient()
         {
-            var redisIP = "198.211.107.101";
+/*            var redisIP = "198.211.107.101";
             var redisPort = 6379;
+*/
+            var redisIP = "127.0.0.1";
+            var redisPort = 6378;
             var options = ConfigurationOptions.Parse($"{redisIP}:{redisPort}");
             options.SyncTimeout = 10*1000;
             ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(options);

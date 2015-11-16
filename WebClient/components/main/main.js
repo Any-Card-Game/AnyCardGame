@@ -8,8 +8,8 @@ module.controller('mainCtrl', function ($scope) {
 
   function doit() {
     var AlchemyChatServer = new Alchemy({
-      //Server: "127.0.0.1",
-      Server: "45.79.186.117",
+      Server: "127.0.0.1",
+      //Server: "45.79.186.117",
       DebugMode: false
     });
 

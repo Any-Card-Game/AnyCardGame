@@ -6,15 +6,82 @@
     <title>Any Card Game</title>
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
     <link rel="stylesheet" href="styles/main.css">
+    <link type="text/css" rel="stylesheet" href="styles/materialize.css"  media="screen,projection"/>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .left {
+            width: 50%;
+            left: 0;
+            height: 100%;
+        }
+
+        .right {
+            left:50%;
+            width: 50%;
+            height: 100%;
+        }
+
+        .side{
+            position: fixed;
+            transition: 4s;
+            background-color: rgba(25,25,25,0.6);
+            z-index: -1;
+        }
+
+        .left.slide {
+            transform:translateX(-100%);
+        }
+
+        .right.slide {
+            transform:translateX(100%);
+        }
+        .back{
+            position:fixed;
+            width:100%;
+            height:100%;
+            background-image:url(http://www.menucool.com/slider/jsImgSlider/images/image-slider-2.jpg);
+            background-size: cover;
+            z-index:-2;
+        }
+    </style>
+    <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
 </head>
 <body>
-This is the site
-<div ui-view></div>
-That was teh site
+<div class="back">
+</div>
+<div class="side left" ng-class="{slide:doit}"></div>
+<div class="side right" ng-class="{slide:doit}"></div>
+<div class="container" style="background-color:white; padding:20px;">
+    <div class="section">
 
+        <!--   Icon Section   -->
+        <div class="row">
+            <div class="col s12 m12">
+                <button ng-click="doit=!doit">do</button>
+                This is the site
+                <div ui-view></div>
+                That was teh site
+            </div>
+        </div>
+    </div>
+    <br><br>
+
+    <div class="section">
+
+    </div>
+</div>
+
+<script src="bower_components/jquery/dist/jquery.js"></script>
 <script src="bower_components/angular/angular.js"></script>
 <script src="bower_components/angular-ui-router/release/angular-ui-router.js"></script>
 <script src="bower_components/modernizr/modernizr.js"></script>
+<script src="libs/materialize.js"></script>
 
 <script src="libs/alchemy/alchemy-client.js"></script>
 <script src="components/app.js"></script>
