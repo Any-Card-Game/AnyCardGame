@@ -1,0 +1,102 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+.left {
+  width: 50%;
+  left: 0;
+  height: 100%;
+}
+.right {
+  left: 50%;
+  width: 50%;
+  height: 100%;
+}
+.side {
+  top: 0;
+  position: fixed;
+  transition: 2s;
+  background-color: rgba(25, 25, 25, 0.6);
+  z-index: -1;
+}
+.left.slide {
+  transform: translateX(-100%);
+}
+.right.slide {
+  transform: translateX(100%);
+}
+.back {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  background-image: url(http://www.menucool.com/slider/jsImgSlider/images/image-slider-2.jpg);
+  background-size: cover;
+  z-index: -2;
+}
+.carousel {
+  transition: 2s;
+}
+.translate-left-20 {
+  transform: translateX(-6000px);
+}
+.translate-left-19 {
+  transform: translateX(-5700px);
+}
+.translate-left-18 {
+  transform: translateX(-5400px);
+}
+.translate-left-17 {
+  transform: translateX(-5100px);
+}
+.translate-left-16 {
+  transform: translateX(-4800px);
+}
+.translate-left-15 {
+  transform: translateX(-4500px);
+}
+.translate-left-14 {
+  transform: translateX(-4200px);
+}
+.translate-left-13 {
+  transform: translateX(-3900px);
+}
+.translate-left-12 {
+  transform: translateX(-3600px);
+}
+.translate-left-11 {
+  transform: translateX(-3300px);
+}
+.translate-left-10 {
+  transform: translateX(-3000px);
+}
+.translate-left-9 {
+  transform: translateX(-2700px);
+}
+.translate-left-8 {
+  transform: translateX(-2400px);
+}
+.translate-left-7 {
+  transform: translateX(-2100px);
+}
+.translate-left-6 {
+  transform: translateX(-1800px);
+}
+.translate-left-5 {
+  transform: translateX(-1500px);
+}
+.translate-left-4 {
+  transform: translateX(-1200px);
+}
+.translate-left-3 {
+  transform: translateX(-900px);
+}
+.translate-left-2 {
+  transform: translateX(-600px);
+}
+.translate-left-1 {
+  transform: translateX(-300px);
+}
+.translate-left-0 {
+  transform: translateX(0px);
+}

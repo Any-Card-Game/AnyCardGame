@@ -52,3 +52,5 @@ dist
 bower_components
 packages
 workspace.xml
+
+.idea
