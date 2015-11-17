@@ -226,3 +226,6 @@ body {
 .translate-left-0 {
   transform: translateX(0px);
 }
+.scrollable {
+  overflow-y: hidden !important;
+}

@@ -16,6 +16,7 @@
   "dependencies": {
     "angular": "~1.4.4",
     "angular-ui-router": "~0.2.15",
+    "jquery": "~2.1.4",
     "modernizr": "~2.8.3"
   }
 }
