@@ -37,65 +37,191 @@ body {
 .carousel {
   transition: 2s;
 }
+.swoop-up-20 {
+  transform: translateY(3000px);
+}
+.swoop-up-19 {
+  transform: translateY(2800px);
+}
+.swoop-up-18 {
+  transform: translateY(2600px);
+}
+.swoop-up-17 {
+  transform: translateY(2400px);
+}
+.swoop-up-16 {
+  transform: translateY(2200px);
+}
+.swoop-up-15 {
+  transform: translateY(2000px);
+}
+.swoop-up-14 {
+  transform: translateY(1800px);
+}
+.swoop-up-13 {
+  transform: translateY(1600px);
+}
+.swoop-up-12 {
+  transform: translateY(1400px);
+}
+.swoop-up-11 {
+  transform: translateY(1200px);
+}
+.swoop-up-10 {
+  transform: translateY(1000px);
+}
+.swoop-up-9 {
+  transform: translateY(800px);
+}
+.swoop-up-8 {
+  transform: translateY(600px);
+}
+.swoop-up-7 {
+  transform: translateY(400px);
+}
+.swoop-up-6 {
+  transform: translateY(200px);
+}
+.swoop-up-5 {
+  transform: translateY(0px);
+}
+.swoop-up-4 {
+  transform: translateY(-200px);
+}
+.swoop-up-3 {
+  transform: translateY(-400px);
+}
+.swoop-up-2 {
+  transform: translateY(-600px);
+}
+.swoop-up-1 {
+  transform: translateY(-800px);
+}
+.swoop-up-0 {
+  transform: translateY(-1000px);
+}
+.swoop-down-20 {
+  transform: translateY(-3000px);
+}
+.swoop-down-19 {
+  transform: translateY(-2800px);
+}
+.swoop-down-18 {
+  transform: translateY(-2600px);
+}
+.swoop-down-17 {
+  transform: translateY(-2400px);
+}
+.swoop-down-16 {
+  transform: translateY(-2200px);
+}
+.swoop-down-15 {
+  transform: translateY(-2000px);
+}
+.swoop-down-14 {
+  transform: translateY(-1800px);
+}
+.swoop-down-13 {
+  transform: translateY(-1600px);
+}
+.swoop-down-12 {
+  transform: translateY(-1400px);
+}
+.swoop-down-11 {
+  transform: translateY(-1200px);
+}
+.swoop-down-10 {
+  transform: translateY(-1000px);
+}
+.swoop-down-9 {
+  transform: translateY(-800px);
+}
+.swoop-down-8 {
+  transform: translateY(-600px);
+}
+.swoop-down-7 {
+  transform: translateY(-400px);
+}
+.swoop-down-6 {
+  transform: translateY(-200px);
+}
+.swoop-down-5 {
+  transform: translateY(0px);
+}
+.swoop-down-4 {
+  transform: translateY(200px);
+}
+.swoop-down-3 {
+  transform: translateY(400px);
+}
+.swoop-down-2 {
+  transform: translateY(600px);
+}
+.swoop-down-1 {
+  transform: translateY(800px);
+}
+.swoop-down-0 {
+  transform: translateY(1000px);
+}
 .translate-left-20 {
-  transform: translateX(-6000px);
+  transform: translateX(-4540px);
 }
 .translate-left-19 {
-  transform: translateX(-5700px);
+  transform: translateX(-4313px);
 }
 .translate-left-18 {
-  transform: translateX(-5400px);
+  transform: translateX(-4086px);
 }
 .translate-left-17 {
-  transform: translateX(-5100px);
+  transform: translateX(-3859px);
 }
 .translate-left-16 {
-  transform: translateX(-4800px);
+  transform: translateX(-3632px);
 }
 .translate-left-15 {
-  transform: translateX(-4500px);
+  transform: translateX(-3405px);
 }
 .translate-left-14 {
-  transform: translateX(-4200px);
+  transform: translateX(-3178px);
 }
 .translate-left-13 {
-  transform: translateX(-3900px);
+  transform: translateX(-2951px);
 }
 .translate-left-12 {
-  transform: translateX(-3600px);
+  transform: translateX(-2724px);
 }
 .translate-left-11 {
-  transform: translateX(-3300px);
+  transform: translateX(-2497px);
 }
 .translate-left-10 {
-  transform: translateX(-3000px);
+  transform: translateX(-2270px);
 }
 .translate-left-9 {
-  transform: translateX(-2700px);
+  transform: translateX(-2043px);
 }
 .translate-left-8 {
-  transform: translateX(-2400px);
+  transform: translateX(-1816px);
 }
 .translate-left-7 {
-  transform: translateX(-2100px);
+  transform: translateX(-1589px);
 }
 .translate-left-6 {
-  transform: translateX(-1800px);
+  transform: translateX(-1362px);
 }
 .translate-left-5 {
-  transform: translateX(-1500px);
+  transform: translateX(-1135px);
 }
 .translate-left-4 {
-  transform: translateX(-1200px);
+  transform: translateX(-908px);
 }
 .translate-left-3 {
-  transform: translateX(-900px);
+  transform: translateX(-681px);
 }
 .translate-left-2 {
-  transform: translateX(-600px);
+  transform: translateX(-454px);
 }
 .translate-left-1 {
-  transform: translateX(-300px);
+  transform: translateX(-227px);
 }
 .translate-left-0 {
   transform: translateX(0px);

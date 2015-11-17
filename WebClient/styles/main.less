@@ -46,14 +46,35 @@ body {
   transition: 2s;
 }
 
+@items: 20;
+
+.swoop-up-loop (@i) when (@i >= 0) {
+  .swoop-up-@{i} {
+    transform: translateY(-1000px  + @i*200);
+  }
+  .swoop-up-loop(@i - 1);
+}
+
+.swoop-up-loop(@items);
+
+
+.swoop-down-loop (@i) when (@i >= 0) {
+  .swoop-down-@{i} {
+    transform: translateY(1000px - @i*200);
+  }
+  .swoop-down-loop(@i - 1);
+}
+
+.swoop-down-loop(@items);
+
 @iterations: 20;
 
 .translate-loop (@i) when (@i >= 0) {
-  .translate-left-@{i}{
-    transform: translateX(-300px*@i);
+  .translate-left-@{i} {
+    transform: translateX(-227px*@i);
 
   }
-   .translate-loop(@i - 1);
+  .translate-loop(@i - 1);
 }
 
 .translate-loop(@iterations);

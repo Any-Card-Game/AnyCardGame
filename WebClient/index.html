@@ -19,7 +19,7 @@
         <!--   Icon Section   -->
         <div class="row">
             <div class="col s12 m12">
-                <button ng-click="model.doit=!model.doit">do</button>
+                <button ng-click="model.doit=!model.doit;model.num=undefined;">do</button>
                 This is the site
                 <div ui-view></div>
                 That was teh site
@@ -28,27 +28,21 @@
     </div>
     <br><br>
 
-    <div class="section" ng-repeat="n in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]" style=" background-color:white;padding: 40px 20px 20px;margin-top:20px; overflow:hidden;">
-        <div class="row carousel translate-left-{{ind}}" style=" width:1000%" ng-init="ind=0" >
-            <div class="col " style="width:300px;" ng-repeat="c in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]" >
+    
+    <div ng-repeat="n in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]" class="section {{model.doit?(n<= model.num?'swoop-up-'+(model.num-n+1):'swoop-down-'+(n-model.num)):''}}"
+         style="background-color:white;margin-top:5px; margin-bottom:5px; overflow:hidden; transition:2s;">
+        <div class="row carousel translate-left-{{ind}}" style=" width:1000%; margin-bottom:0;" ng-init="ind=0" >
+            <div class="col" style="width:227px;" ng-repeat="c in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]" ng-click="model.doit=!model.doit;model.num=n;">
                 <div class="card blue-grey darken-1">
                     <div class="card-content white-text">
-                        <span class="card-title">Card Title</span>
-
-                        <p>I am a very simple card. I am good at containing small bits of information.
-                            I am convenient because I require little markup to use effectively.</p>
+                        <span class="card-title">Card Title {{n}}</span>
                     </div>
                     <div class="card-action">
-                        <a href="#">This is a link</a>
                         <a href="#">This is a link</a>
                     </div>
                 </div>
             </div>
         </div>
-        <button ng-click="model.doit=!model.doit">do</button>
-
-        <button ng-click="ind=ind-1">prev</button>
-        <button ng-click="ind=ind+1">next</button>
     </div>
 </div>
 
