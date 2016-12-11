@@ -56,7 +56,7 @@ namespace GameServer
                 GameManager gameManager = new GameManager(gameId) { InitialRequest = createNewGameRequest };
 
                 games.Add(gameId, gameManager);
-                Console.WriteLine("New Game Request " + games.Count);
+                //                Console.WriteLine("New Game Request " + games.Count);
 
                 client.SendMessage("GameUpdate" + createNewGameRequest.GatewayKey, new GameUpdateRedisMessage()
                 {
@@ -76,14 +76,27 @@ namespace GameServer
              });
 
 
+            timer = new Timer((e) =>
+             {
+                 var now = DateTime.Now;
+                 var answersPerSecond = 0.0;
+
+                 if (start != DateTime.MinValue)
+                 {
+                     answersPerSecond = AnswerCount / (now - start).TotalSeconds;
+                 }
+                 Console.WriteLine($"Games Done: {GamesDone} Answers: {AnswerCount} LiveGames: {games.Count} APS: {answersPerSecond}");
+             }, null, 0, 1000);
 
 
             Console.WriteLine("Press any [Enter] to close the host.");
             Console.ReadLine();
         }
 
-        private static int answers = 0;
+        private static DateTime start = DateTime.MinValue;
+        private static int AnswerCount = 0;
         private static int GamesDone = 0;
+        private static int LiveGames = 0;
         public class DataClass
         {
             public GameManager GameManager { get; set; }
@@ -112,14 +125,17 @@ namespace GameServer
                     },
                     GameStatus = GameStatus.AskQuestion
                 });
-
-                Console.WriteLine(username + " " + question + " " + string.Join(",", answers));
+                if (start == DateTime.MinValue)
+                {
+                    start = DateTime.Now;
+                }
+                AnswerCount++;
+                //                Console.WriteLine(username + " " + question + " " + string.Join(",", answers));
             }
             public void setWinner(object username)
             {
-                Console.WriteLine(username);
+                //                Console.WriteLine(username);
                 GamesDone++;
-                //                                    Console.WriteLine("GAME INDEX::::" + gameId+"::::::"+ questionIndex++);
 
                 client.SendMessage("GameUpdate" + GameManager.InitialRequest.GatewayKey, new GameUpdateRedisMessage()
                 {
@@ -129,9 +145,7 @@ namespace GameServer
                     GameStatus = GameStatus.GameOver
                 });
                 games.Remove(GameManager.GameId);
-                Console.WriteLine("0Game over " + games.Count);
-
-                //                    Console.WriteLine(userc.UserName + " Has won!");
+                //                Console.WriteLine("0Game over " + games.Count);
 
             }
             public void log(string a)
@@ -155,7 +169,7 @@ namespace GameServer
              {
                  var txt = getFile($@"./js/{file}.js");
                  engine.SetValue("shuff", dataClass);
-                 engine.Execute("var exports={};"+txt);
+                 engine.Execute("var exports={};" + txt);
                  return engine.GetValue("exports");
              }));
 
@@ -164,7 +178,9 @@ namespace GameServer
         }
 
 
-        static Dictionary<string,string> files=new Dictionary<string, string>();
+        static Dictionary<string, string> files = new Dictionary<string, string>();
+        private static Timer timer;
+
         private static string getFile(string file)
         {
             if (files.ContainsKey(file))
