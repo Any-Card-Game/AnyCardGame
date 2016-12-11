@@ -14,9 +14,9 @@
 </head>
 <body ng-init="model={}">
 <div class="container">
-    <!-- <div class="section" style=" background-color:white;padding: 40px 20px 20px; margin-top:20px;">
+     <div class="section" style=" background-color:white;padding: 40px 20px 20px; margin-top:20px;">
 
-         &lt;!&ndash;   Icon Section   &ndash;&gt;
+         <!--   Icon Section   -->
          <div class="row">
              <div class="col s12 m12">
                  <button ng-click="model.doit=!model.doit;model.num=undefined;">do</button>
@@ -26,9 +26,9 @@
              </div>
          </div>
      </div>
-     <br><br>-->
+     <br><br>
 
-    <div style="width:100%; height:100vh; overflow-y:scroll; overflow-x:hidden" ng-class="{scrollable:model.doit}">
+   <!-- <div style="width:100%; height:100vh; overflow-y:scroll; overflow-x:hidden" ng-class="{scrollable:model.doit}">
         <div ng-repeat="n in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]" class="section {{model.doit?(n<= model.num?'swoop-up-'+(model.num-n+1):'swoop-down-'+(n-model.num)):''}}"
              style="background-color:white;margin-top:5px; margin-bottom:5px; overflow:hidden; transition:2s;">
             <div class="row carousel translate-left-{{ind}}" style=" width:1000%; margin-bottom:0;" ng-init="ind=0">
@@ -44,7 +44,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div>-->
 </div>
 
 <div class="back" ng-click="model.doit=!model.doit;model.num=undefined;">

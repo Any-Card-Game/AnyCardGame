@@ -267,12 +267,12 @@ namespace GameServer.CardGameLibrary
 
         public string Name { get; set; }
 
-        public JsList<CardGameCard> Cards { get; set; }
+        public List<CardGameCard> Cards { get; set; }
 
         public CardGamePile(string name)
         {
             Name = name;
-            Cards = new JsList<CardGameCard>();
+            Cards = new List<CardGameCard>();
         }
         
         public void ReverseCards()
@@ -289,7 +289,7 @@ namespace GameServer.CardGameLibrary
                                 return a.OrderBy(b => b.Value);
                             });
 
-            JsList<CardGameCard> items = new JsList<CardGameCard>();
+            List<CardGameCard> items = new List<CardGameCard>();
             int jf = 0;
             items.AddRange(ij.SelectMany(cardGameCard => cardGameCard));
             Cards = items;
@@ -322,13 +322,13 @@ namespace GameServer.CardGameLibrary
 
         public CardGameCardState State { get; set; }
 
-        public JsList<string> Effects { get; set; }
+        public List<string> Effects { get; set; }
 
         public CardGameCard(int value, int type)
         {
             Value = value;
             Type = type;
-            Effects = new JsList<string>();
+            Effects = new List<string>();
             Guid = Guid.NewGuid();
 
         }
@@ -427,7 +427,7 @@ namespace GameServer.CardGameLibrary
 
         public CardGamePile Pile { get; set; }
 
-        public JsList<string> Effects { get; set; }
+        public List<string> Effects { get; set; }
 
         public bool Visible { get; set; }
 
@@ -468,7 +468,7 @@ namespace GameServer.CardGameLibrary
             NumberOfCardsVertical = options.NumerOfCardsVertical == 0 ? 1 : options.NumerOfCardsVertical;
             ResizeType = options.ResizeType;
             //Rotate = ExtensionMethods.eval("options.rotate? options.rotate : 0");
-            Effects = new JsList<string>();
+            Effects = new List<string>();
         }
 
         public CardGameTableSpace AssignPile(CardGamePile pile)
@@ -495,15 +495,15 @@ namespace GameServer.CardGameLibrary
 
         public int EmulatedAnswerIndex { get; set; }
 
-        public JsList<CardGameTableSpace> Spaces { get; set; }
+        public List<CardGameTableSpace> Spaces { get; set; }
 
-        public JsList<GameCardGameTextArea> TextAreas { get; set; }
+        public List<GameCardGameTextArea> TextAreas { get; set; }
 
         public Size Size { get; set; }
 
-        public JsList<CardGameAnswer> EmulatedAnswers { get; set; }
+        public List<CardGameAnswer> EmulatedAnswers { get; set; }
 
-        public JsList<CardGameUser> Users { get; set; }
+        public List<CardGameUser> Users { get; set; }
 
         public CardGamePile Deck { get; set; }
 
@@ -511,18 +511,18 @@ namespace GameServer.CardGameLibrary
 
         public int NumberOfJokers { get; set; }
 
-        public JsList<CardGameEffect> Effects { get; set; }
+        public List<CardGameEffect> Effects { get; set; }
 
 
         public DebugInfo DebugInfo { get; set; }
 
         public GameCardGame()
         {
-            Spaces = new JsList<CardGameTableSpace>();
-            TextAreas = new JsList<GameCardGameTextArea>();
-            EmulatedAnswers = new JsList<CardGameAnswer>();
-            Users = new JsList<CardGameUser>();
-            Effects = new JsList<CardGameEffect>();
+            Spaces = new List<CardGameTableSpace>();
+            TextAreas = new List<GameCardGameTextArea>();
+            EmulatedAnswers = new List<CardGameAnswer>();
+            Users = new List<CardGameUser>();
+            Effects = new List<CardGameEffect>();
             Deck = new CardGamePile("deck");
         }
 
@@ -607,14 +607,14 @@ namespace GameServer.CardGameLibrary
 
         }
 
-        public void SetEmulatedAnswers(JsList<CardGameAnswer> answers)
+        public void SetEmulatedAnswers(List<CardGameAnswer> answers)
         {
             EmulatedAnswers = answers;
         }
 
-        public void SetPlayers(JsList<MongoUser.User> players)
+        public void SetPlayers(List<MongoUser.User> players)
         {
-            Users = new JsList<CardGameUser>();
+            Users = new List<CardGameUser>();
 
             if (players == null || players.Count == 0)
                 return;
@@ -668,7 +668,7 @@ namespace GameServer.CardGameLibrary
 
     public class DebugInfo
     {
-        public JsList<int> Breakpoints { get; set; }
+        public List<int> Breakpoints { get; set; }
         public StepType StepThrough { get; set; }
         public int LastFunction { get; set; }
         public bool Action { get; set; }
@@ -681,10 +681,10 @@ namespace GameServer.CardGameLibrary
     {
         public int NumberOfPlayers { get; set; }
         public string GameName { get; set; }
-        public JsList<int> Breakpoints { get; set; }
+        public List<int> Breakpoints { get; set; }
 
 
-        public CreateDebugGameRequest(int numberOfPlayers, string gameName, JsList<int> breakpoints)
+        public CreateDebugGameRequest(int numberOfPlayers, string gameName, List<int> breakpoints)
         {
             NumberOfPlayers = numberOfPlayers;
             GameName = gameName;
@@ -706,13 +706,13 @@ namespace GameServer.CardGameLibrary
     public class DebugResponse
     {
         public string RoomID { get; set; }
-        public JsList<int> Breakpoints { get; set; }
+        public List<int> Breakpoints { get; set; }
         public StepType Step { get; set; }
         public bool Action { get; set; }
         public string VariableLookup { get; set; }
 
 
-        public DebugResponse(string roomID, JsList<int> breakpoints, StepType step, bool action)
+        public DebugResponse(string roomID, List<int> breakpoints, StepType step, bool action)
         {
             RoomID = roomID;
             Breakpoints = breakpoints;
@@ -732,7 +732,7 @@ namespace GameServer.CardGameLibrary
 
         public EffectType Type { get; set; }
 
-        public JsList<CardGameEffectProperty> Properties { get; set; }
+        public List<CardGameEffectProperty> Properties { get; set; }
 
         public CardGameEffect(CardGameEffectOptions cardGameEffectOptions)
         {
@@ -746,7 +746,7 @@ namespace GameServer.CardGameLibrary
     {
         public string Name { get; set; }
         public EffectType Type { get; set; }
-        public JsList<CardGameEffectProperty> Properties { get; set; }
+        public List<CardGameEffectProperty> Properties { get; set; }
     }
 
     public class CardGameEffectProperty

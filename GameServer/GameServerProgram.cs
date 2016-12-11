@@ -31,11 +31,12 @@ namespace GameServer
         }
 
         public string GameId { get; set; }
-        public Thread Thread { get; set; }
         public int Answer { get; set; }
         public CreateNewGameRequest InitialRequest { get; set; }
+        public GameServerProgram.DataClass DataClass { get; set; }
     }
-    class GameServerProgram
+
+    public class GameServerProgram
     {
         private static Dictionary<string, GameManager> games = new Dictionary<string, GameManager>();
         private static RedisClient client;
@@ -50,12 +51,11 @@ namespace GameServer
             client = new RedisClient();
             client.Subscribe(RedisChannels.CreateNewGameRequest, request =>
             {
-
                 var gameId = Guid.NewGuid().ToString("N");
                 var createNewGameRequest = (CreateNewGameRequest)request;
                 GameManager gameManager = new GameManager(gameId) { InitialRequest = createNewGameRequest };
 
-                games.Add(gameId, runThing(gameManager));
+                games.Add(gameId, gameManager);
                 Console.WriteLine("New Game Request " + games.Count);
 
                 client.SendMessage("GameUpdate" + createNewGameRequest.GatewayKey, new GameUpdateRedisMessage()
@@ -65,14 +65,14 @@ namespace GameServer
                     GameServer = gameServerKey,
                     GameStatus = GameStatus.Started
                 });
+                startGame(gameManager);
             });
 
 
             client.Subscribe("GameServer" + gameServerKey, request =>
              {
                  var gameServerResponse = (GameServerRedisMessage)request;
-                 games[gameServerResponse.GameId].Answer = gameServerResponse.AnswerIndex;
-                 games[gameServerResponse.GameId].Thread.Resume();
+                 games[gameServerResponse.GameId].DataClass.curAnswered(gameServerResponse.AnswerIndex);
              });
 
 
@@ -84,156 +84,98 @@ namespace GameServer
 
         private static int answers = 0;
         private static int GamesDone = 0;
-        private static GameManager runThing(GameManager gameManager)
+        public class DataClass
         {
-            BackgroundWorker thread = null;
-            thread = new BackgroundWorker();
-            thread.WorkerReportsProgress = true;
-            int questionIndex = 0;
-            thread.ProgressChanged += (a, b) =>
+            public GameManager GameManager { get; set; }
+
+            public DataClass(GameManager gameManager)
             {
-                if (b.ProgressPercentage == 0)
-                {
-                    answers++;
-                    //                                    Console.WriteLine("GAME INDEX::::" + gameId+"::::::"+ questionIndex++);
-                    var questionc = (CardGameQuestion)b.UserState;
+                GameManager = gameManager;
+                GameManager.DataClass = this;
+            }
 
-                    client.SendMessage("GameUpdate" + gameManager.InitialRequest.GatewayKey, new GameUpdateRedisMessage()
-                    {
-                        GameServer = gameServerKey,
-                        GameId = gameManager.GameId,
-                        UserKey = gameManager.InitialRequest.UserKey,
-                        Question = new CardGameQuestionTransport()
-                        {
-                            User = questionc.User.UserName,
-                            Question = questionc.Question,
-                            Answers = questionc.Answers,
-                        },
-                        GameStatus = GameStatus.AskQuestion
-                    });
+            public Action<int> curAnswered;
 
-
-
-                }
-                else if (b.ProgressPercentage == 1)
-                {
-                    GamesDone++;
-                    //                                    Console.WriteLine("GAME INDEX::::" + gameId+"::::::"+ questionIndex++);
-                    var userc = (CardGameUser)b.UserState;
-
-                    client.SendMessage("GameUpdate" + gameManager.InitialRequest.GatewayKey, new GameUpdateRedisMessage()
-                    {
-                        GameServer = gameServerKey,
-                        GameId = gameManager.GameId,
-                        UserKey = gameManager.InitialRequest.UserKey,
-                        GameStatus = GameStatus.GameOver
-                    });
-                    games.Remove(gameManager.GameId);
-                    Console.WriteLine("0Game over " + games.Count);
-
-                    //                    Console.WriteLine(userc.UserName + " Has won!");
-                }
-            };
-
-
-            thread.DoWork += (t, cc) =>
+            public void questionAsked(string username, string question, string[] answers, Action<int> a)
             {
-                gameManager.Thread = Thread.CurrentThread;
-                //                Console.WriteLine("Started " + gameManager.GameId);
-                Jint.Engine engine = new Jint.Engine();
-                engine.SetValue("log", new Action<object>(a => { Console.WriteLine(a); }));
-
-
-                engine.SetValue("CardGame", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameCardGame)));
-                engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGamePile)));
-
-                engine.SetValue("TableTextArea", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameCardGameTextArea)));
-                engine.SetValue("TableSpace", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGameTableSpace)));
-                engine.SetValue("Pile", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.CardGamePile)));
-                engine.SetValue("GameUtils", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.GameUtils)));
-                engine.SetValue("Shuff", TypeReference.CreateTypeReference(engine, typeof(CardGameLibrary.Shuff)));
-
-                try
+                curAnswered = a;
+                client.SendMessage("GameUpdate" + GameManager.InitialRequest.GatewayKey, new GameUpdateRedisMessage()
                 {
-                    var sevens = File.ReadAllText("js/sevens.js");
-                    Engine c = executeES6(engine, sevens);
-                    c = c.Execute("var cg=new CardGame()");
-
-                    c.GetValue("cg").AsObject().Get("__init__").Invoke(c.GetValue("cg"), new JsValue[] { 12 });
-
-                    c = c.Execute("var _=new GameUtils()");
-                    c = c.Execute("var shuff=new Shuff()");
-                    c.GetValue("shuff").AsObject().Get("SetDelegates").Invoke(c.GetValue("shuff"), new JsValue[]
+                    GameServer = gameServerKey,
+                    GameId = GameManager.GameId,
+                    UserKey = GameManager.InitialRequest.UserKey,
+                    Question = new CardGameQuestionTransport()
                     {
-                        JsValue.FromObject(engine, new CardGameDelegates()
-                        {
-                            AskQuestionCallback = question => askQuestion(thread, gameManager, question),
-                            DeclareWinnerCallback = user => declareWinner(thread, user)
-                        })
-                    });
-                    c = c.Execute("var sevens=new Sevens()");
+                        User = username,
+                        Question = question,
+                        Answers = answers,
+                    },
+                    GameStatus = GameStatus.AskQuestion
+                });
 
-                    c = c.Execute("sevens.constructor(cg);");
-                    //                    Console.WriteLine("Running game " + gameManager.GameId);
+                Console.WriteLine(username + " " + question + " " + string.Join(",", answers));
+            }
+            public void setWinner(object username)
+            {
+                Console.WriteLine(username);
+                GamesDone++;
+                //                                    Console.WriteLine("GAME INDEX::::" + gameId+"::::::"+ questionIndex++);
 
-                    c = c.Execute("sevens.runGame(cg);");
-                }
-                catch (GameOverException exc)
+                client.SendMessage("GameUpdate" + GameManager.InitialRequest.GatewayKey, new GameUpdateRedisMessage()
                 {
-                    Console.WriteLine("1Game Over");
-                }
-                catch (Exception exc)
-                {
-                    if (exc.InnerException is JavaScriptException)
-                    {
-                        var location = engine.GetLastSyntaxNode().Location;
-                        var javaScriptException = (exc.InnerException as JavaScriptException);
-                        throw new ApplicationException($"{javaScriptException.Error} " +
-                                                       $"({location.Source}: Line {location.Start.Line}, Column {location.Start.Column} to Line {location.End.Line}, Column {location.End.Column})", exc);
-                    }
-                }
-            };
-            thread.RunWorkerCompleted += (o, e) =>
+                    GameServer = gameServerKey,
+                    GameId = GameManager.GameId,
+                    UserKey = GameManager.InitialRequest.UserKey,
+                    GameStatus = GameStatus.GameOver
+                });
+                games.Remove(GameManager.GameId);
+                Console.WriteLine("0Game over " + games.Count);
+
+                //                    Console.WriteLine(userc.UserName + " Has won!");
+
+            }
+            public void log(string a)
+            {
+                Console.WriteLine("--" + a);
+            }
+
+        }
+
+
+        private static void startGame(GameManager gameManager)
+        {
+            Engine engine = new Engine();
+            var promise = getFile(@"./js/promise.js");
+            var sevens = getFile(@"./js/sevens.js");
+
+            var dataClass = new DataClass(gameManager);
+            engine.SetValue("shuff", dataClass);
+            engine.SetValue("exports", new { });
+            engine.SetValue("require", new Func<string, JsValue>((file) =>
              {
-                 Console.WriteLine("2thread concluded");
-                 Console.WriteLine("3Game Over       " + Process.GetCurrentProcess().Threads.Count);
+                 var txt = getFile($@"./js/{file}.js");
+                 engine.SetValue("shuff", dataClass);
+                 engine.Execute("var exports={};"+txt);
+                 return engine.GetValue("exports");
+             }));
 
-             };
-            thread.RunWorkerAsync();
-            return gameManager;
+            engine.Execute(promise + "; " + sevens);
+            engine.Execute("Main.run()");
         }
 
-        private static void declareWinner(BackgroundWorker thread, CardGameUser user)
+
+        static Dictionary<string,string> files=new Dictionary<string, string>();
+        private static string getFile(string file)
         {
-            thread.ReportProgress(1, user);
-            throw new GameOverException();
+            if (files.ContainsKey(file))
+            {
+                return files[file];
+            }
+            files[file] = File.ReadAllText(file);
+            return files[file];
         }
 
-        private static CardGameAnswer askQuestion(BackgroundWorker thread, GameManager gameResponse, CardGameQuestion question)
-        {
-            thread.ReportProgress(0, question);
-            Thread.CurrentThread.Suspend();
-            return new CardGameAnswer() { Value = gameResponse.Answer };
-        }
-
-        private static Engine executeES6(Engine engine, string text)
-        {
-            /*
-                        var typescript = File.ReadAllText("js/typescript/typescript.js");
-                        var mc = engine.Execute(typescript);
-                        var tsc = mc.GetValue("ts");
-                        var cc = tsc.AsObject().Get("transpile");
-
-                        var c = cc.Invoke(text).AsString();
-
-                        var mcc = engine.Execute(c);
-            */
-            var mcc = engine.Execute(text);
-            return mcc;
-        }
     }
 
-    internal class GameOverException : Exception
-    {
-    }
+
 }

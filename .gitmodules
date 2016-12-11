@@ -1,6 +1,3 @@
-[submodule "jint"]
-	path = jint
-	url = https://github.com/Shuffle-Game/jint.git
 [submodule "Alchemy-Websockets"]
 	path = Alchemy-Websockets
 	url = https://github.com/Shuffle-Game/Alchemy-Websockets.git
