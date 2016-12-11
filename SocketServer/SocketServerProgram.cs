@@ -5,11 +5,11 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Alchemy;
-using Alchemy.Classes;
 using Common.Redis;
 using Common.Redis.RedisMessages;
 using Newtonsoft.Json;
+using WebSocketSharp;
+using WebSocketSharp.Server;
 
 namespace SocketServer
 {
@@ -23,7 +23,7 @@ namespace SocketServer
             Console.WriteLine(url);
 
             GatewayKey = Guid.NewGuid().ToString("N");
-            Console.WriteLine("Gateway Key "+GatewayKey);
+            Console.WriteLine("Gateway Key " + GatewayKey);
             redisClient = new RedisClient();
             redisClient.Subscribe("Gateway" + GatewayKey, request =>
               {
@@ -56,7 +56,7 @@ namespace SocketServer
                             });
                         break;
                     case GameStatus.GameOver:
-//                        Console.WriteLine("Game Over"+rr.GameId);
+                        //                        Console.WriteLine("Game Over"+rr.GameId);
                         str = JsonConvert.SerializeObject(new GameOverSocketMessage()
                             , new JsonSerializerSettings()
                             {
@@ -64,7 +64,7 @@ namespace SocketServer
                             });
                         break;
                     case GameStatus.AskQuestion:
-//                        Console.WriteLine("Ask Question" + rr.GameId);
+                        //                        Console.WriteLine("Ask Question" + rr.GameId);
                         str = JsonConvert.SerializeObject(new AskQuestionSocketMessage()
                         {
                             Question = rr.Question.Question,
@@ -79,22 +79,47 @@ namespace SocketServer
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-                users[rr.UserKey].UserContext.Send(str);
+
+                users[rr.UserKey].UserContext.SendMessage(str);
 
 
             });
 
+            var wssv = new WebSocketServer("ws://localhost:81");
+            wssv.AddWebSocketService<CardGame>("/");
+            wssv.Start();
 
-            var aServer = new WebSocketServer(81, IPAddress.Any)
-            {
-                OnConnected = OnConnected,
-                TimeOut = new TimeSpan(0, 5, 0)
-            };
-
-            aServer.Start();
             start = DateTime.Now;
             curDateTime = DateTime.Now;
             Console.ReadLine();
+        }
+        public class CardGame : WebSocketBehavior
+        {
+            protected override void OnClose(CloseEventArgs e)
+            {
+                OnDisconnect(this);
+            }
+
+            protected override void OnError(ErrorEventArgs e)
+            {
+                base.OnError(e);
+            }
+
+            protected override void OnOpen()
+            {
+                OnConnected(this);
+                base.OnOpen();
+            }
+
+            protected override void OnMessage(MessageEventArgs e)
+            {
+                OnReceive(this, e.Data);
+            }
+
+            public void SendMessage(string str)
+            {
+                this.Send(str);
+            }
         }
 
 
@@ -105,25 +130,23 @@ namespace SocketServer
 
         public class SocketUser
         {
-            public UserContext UserContext { get; set; }
             public GameUpdateRedisMessage GameData { get; set; }
+            public CardGame UserContext { get; set; }
         }
-        private static void OnConnected(UserContext context)
+        private static void OnConnected(CardGame user)
         {
-            context.SetOnDisconnect(OnDisconnect);
-            context.SetOnReceive(OnReceive);
 
-            users.Add(context.UniqueKey, new SocketUser() { UserContext = context });
+            users.Add(user.ID, new SocketUser() { UserContext = user });
 
-            Console.WriteLine("Client Connection From : " + context.ClientAddress.ToString());
+            Console.WriteLine("Client Connection From : " + user.Context.UserEndPoint.ToString());
         }
 
-        private static void OnDisconnect(UserContext context)
+        private static void OnDisconnect(CardGame user)
         {
-            Console.WriteLine("Client disconnected From : " + context.ClientAddress.ToString()+ "         "+Process.GetCurrentProcess().Threads.Count);
+            Console.WriteLine("Client disconnected From : " + user.ID + "         " + Process.GetCurrentProcess().Threads.Count);
         }
 
-        private static void OnReceive(UserContext context)
+        private static void OnReceive(CardGame user, string frame)
         {
             count++;
             if ((DateTime.Now) > (curDateTime.AddSeconds(1)))
@@ -133,19 +156,19 @@ namespace SocketServer
             }
 
 
-            SocketMessage obj = JsonConvert.DeserializeObject<SocketMessage>(context.DataFrame.ToString(), new JsonSerializerSettings()
+            SocketMessage obj = JsonConvert.DeserializeObject<SocketMessage>(frame, new JsonSerializerSettings()
             {
                 TypeNameHandling = TypeNameHandling.Objects
             });
 
-            var uu = users[context.UniqueKey];
+            var uu = users[user.ID];
             if (obj is CreateNewGameRequestSocketMessage)
             {
-//                Console.WriteLine("Starting Game socket");
+                //                Console.WriteLine("Starting Game socket");
                 redisClient.SendMessage(RedisChannels.CreateNewGameRequest, new CreateNewGameRequest()
                 {
                     GatewayKey = GatewayKey,
-                    UserKey = context.UniqueKey,
+                    UserKey = user.ID,
                     GameName = "sevens"
                 });
             }

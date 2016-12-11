@@ -7,26 +7,22 @@ module.controller('mainCtrl', function ($scope) {
     $scope.model.totalGames = 0;
 
     function doit() {
-        var AlchemyChatServer = new Alchemy({
-            Server: "127.0.0.1",
-            // Server: "52.90.211.46",
-            DebugMode: false
-        });
+        var socket = new WebSocket("ws://localhost:81/");
 
         var dt;
         var sdt;
-        AlchemyChatServer.Connected = function () {
+        socket.onopen = function () {
             console.log("connected");
             dt = new Date() | 0;
             sdt = new Date() | 0;
-            AlchemyChatServer.Send(JSON.parse('{"$type": "SocketServer.CreateNewGameRequestSocketMessage, SocketServer", "GameType": null}'));
+            socket.send('{"$type": "SocketServer.CreateNewGameRequestSocketMessage, SocketServer", "GameType": null}');
         };
 
-        AlchemyChatServer.Disconnected = function () {
+        socket.onclose = function () {
             console.log("disconnected");
         };
         var count = 0;
-        AlchemyChatServer.MessageReceived = function (event) {
+        socket.onmessage = function (event) {
             //console.log(event.data);
             count++;
             if ((new Date() | 0) > (dt + 1000)) {
@@ -41,7 +37,7 @@ module.controller('mainCtrl', function ($scope) {
                 if (message.Answers.length > 0) {
                     answerIndex = 1;
                 }
-                AlchemyChatServer.Send(JSON.parse('{"$type": "SocketServer.AnswerQuestionSocketMessage, SocketServer", "AnswerIndex":' + answerIndex + '}'));
+                socket.send('{"$type": "SocketServer.AnswerQuestionSocketMessage, SocketServer", "AnswerIndex":' + answerIndex + '}');
                 $scope.model.gameInfos.push({Question: message.Question, User: message.User, Answers: message.Answers});
 
             }
@@ -49,10 +45,10 @@ module.controller('mainCtrl', function ($scope) {
 
                 $scope.model.gameStarted = false;
                 $scope.model.gameInfos = [];
-                AlchemyChatServer.Stop();
+                socket.close();
                 setTimeout(function () {
                     doit()
-                }, 1)
+                }, 1);
                 $scope.$digest();
 
             }
@@ -64,7 +60,6 @@ module.controller('mainCtrl', function ($scope) {
             $scope.$digest();
         };
 
-        AlchemyChatServer.Start();
     }
 
     doit();
