@@ -26,6 +26,13 @@ namespace RestServer
 
         protected override void RequestStartup(TinyIoCContainer container, IPipelines pipelines, NancyContext requestContext)
         {
+            pipelines.AfterRequest.AddItemToEndOfPipeline((ctx) =>
+            {
+                ctx.Response.WithHeader("Access-Control-Allow-Origin", "*")
+                                .WithHeader("Access-Control-Allow-Methods", "POST,GET")
+                                .WithHeader("Access-Control-Allow-Headers", "Accept, Origin, Content-type");
+
+            });
             pipelines.OnError.AddItemToEndOfPipeline((context, exception) =>
             {
                 if (exception is RequestException)

@@ -72,7 +72,7 @@ class Serializer {
             var arr = [];
             arr.push(Types.String);
             var dv = new DataView(new ArrayBuffer(2), 0);
-            dv.setInt16(0,value.length,true);
+            dv.setInt16(0, value.length, true);
             arr.push(dv.getUint8(0));
             arr.push(dv.getUint8(1));
             for (var i = 0; i < utf8.length; i++) {
@@ -85,7 +85,7 @@ class Serializer {
             var arr = [];
             arr.push(Types.Short);
             var dv = new DataView(new ArrayBuffer(2), 0);
-            dv.setInt16(0,value,true);
+            dv.setInt16(0, value, true);
             arr.push(dv.getUint8(0));
             arr.push(dv.getUint8(1));
             return arr;
@@ -98,7 +98,7 @@ class Serializer {
         bytes.push(param.messageType);
 
         for (let property in param) {
-            if (param.hasOwnProperty(property) && property!=='messageType') {
+            if (param.hasOwnProperty(property) && property !== 'messageType') {
                 var value = param[property];
                 bytes.push(...this.fromValue(value))
             }
@@ -118,8 +118,8 @@ enum SocketMessageType
 
 enum Types
 {
-    String=0, ArrayOfString=1, Short=2, ArrayOfInt=3,
-    Byte=4
+    String = 0, ArrayOfString = 1, Short = 2, ArrayOfInt = 3,
+    Byte = 4
 }
 
 
@@ -128,9 +128,17 @@ module.controller('mainCtrl', function ($scope) {
     $scope.callback = {};
     $scope.model.gameInfos = [];
     $scope.model.totalGames = 0;
+    var getGateway = () => {
+        fetch('http://127.0.0.1:3579/api/gateway').then((resp) => {
+            return resp.json();
+        }).then(a => {
+            doit(a.data.gatewayUrl);
+        });
+    };
+    getGateway();
 
-    function doit() {
-        var socket = new WebSocket("ws://localhost:81/");
+    function doit(url) {
+        var socket = new WebSocket("ws://" + url);
         socket.binaryType = 'arraybuffer';
         var dt;
         var sdt;
@@ -161,7 +169,10 @@ module.controller('mainCtrl', function ($scope) {
                 if (message.answers.length > 0) {
                     answerIndex = 1;
                 }
-                var bytes = Serializer.toBytes({messageType: SocketMessageType.AnswerQuestion, answerIndex: answerIndex});
+                var bytes = Serializer.toBytes({
+                    messageType: SocketMessageType.AnswerQuestion,
+                    answerIndex: answerIndex
+                });
                 socket.send(Uint8Array.from(bytes).buffer);
 
                 // socket.send('{"$type": "SocketServer.AnswerQuestionSocketMessage, SocketServer", "AnswerIndex":' + answerIndex + '}');
@@ -172,9 +183,7 @@ module.controller('mainCtrl', function ($scope) {
                 $scope.model.gameStarted = false;
                 $scope.model.gameInfos = [];
                 socket.close();
-                setTimeout(function () {
-                    doit()
-                }, 1);
+                getGateway();
                 $scope.$digest();
 
             }
@@ -187,8 +196,6 @@ module.controller('mainCtrl', function ($scope) {
         };
 
     }
-
-    doit();
 });
 
 module.config(function ($locationProvider, $stateProvider, $urlRouterProvider) {

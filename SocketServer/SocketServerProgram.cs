@@ -21,10 +21,12 @@ namespace SocketServer
     {
         private static RedisClient redisClient;
         private static string GatewayKey;
+
         static void Main(string[] args)
         {
-
-            string url = Utils.GetPublicIP() + ":81";
+            Random r = new Random();
+            var port = r.Next(10000, 20000);
+            string url = Utils.GetPublicIP() + ":" + port;
             Console.WriteLine(url);
 
             GatewayKey = Guid.NewGuid().ToString("N");
@@ -53,7 +55,7 @@ namespace SocketServer
                 switch (rr.GameStatus)
                 {
                     case GameStatus.Started:
-//                        Console.WriteLine("Started" + rr.GameId);
+                        //                        Console.WriteLine("Started" + rr.GameId);
                         str = new GameStartedSocketMessage();
                         break;
                     case GameStatus.GameOver:
@@ -81,7 +83,7 @@ namespace SocketServer
 
             });
 
-            var wssv = new WebSocketServer("ws://localhost:81");
+            var wssv = new WebSocketServer("ws://" + url);
             wssv.AddWebSocketService<CardGame>("/");
             wssv.Start();
 
@@ -142,13 +144,13 @@ namespace SocketServer
 
             users.Add(user.ID, new SocketUser() { UserContext = user });
             UsersConnected++;
-//            Console.WriteLine("Client Connection From : " + user.Context.UserEndPoint.ToString());
+            //            Console.WriteLine("Client Connection From : " + user.Context.UserEndPoint.ToString());
         }
 
         private static void OnDisconnect(CardGame user)
         {
             UsersConnected--;
-//            Console.WriteLine("Client disconnected From : " + user.ID + "         " + Process.GetCurrentProcess().Threads.Count);
+            //            Console.WriteLine("Client disconnected From : " + user.ID + "         " + Process.GetCurrentProcess().Threads.Count);
         }
 
         private static void OnReceive(CardGame user, byte[] frame)

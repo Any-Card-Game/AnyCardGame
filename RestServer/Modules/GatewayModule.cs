@@ -10,7 +10,7 @@ namespace RestServer.Modules
         {
             Get["/",true] = async (_, ct) =>
             {
-                this.RequiresAuthentication();
+//                this.RequiresAuthentication();
                 var model = ValidateRequest<GetGatewayRequest>();
                 var response = await GatewayLogic.GetFastestGateway(model);
                 return this.Success(response);

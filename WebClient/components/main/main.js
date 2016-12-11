@@ -118,8 +118,16 @@ module.controller('mainCtrl', function ($scope) {
     $scope.callback = {};
     $scope.model.gameInfos = [];
     $scope.model.totalGames = 0;
-    function doit() {
-        var socket = new WebSocket("ws://localhost:81/");
+    var getGateway = function () {
+        fetch('http://127.0.0.1:3579/api/gateway').then(function (resp) {
+            return resp.json();
+        }).then(function (a) {
+            doit(a.data.gatewayUrl);
+        });
+    };
+    getGateway();
+    function doit(url) {
+        var socket = new WebSocket("ws://" + url);
         socket.binaryType = 'arraybuffer';
         var dt;
         var sdt;
@@ -148,7 +156,10 @@ module.controller('mainCtrl', function ($scope) {
                 if (message.answers.length > 0) {
                     answerIndex = 1;
                 }
-                var bytes = Serializer.toBytes({ messageType: SocketMessageType.AnswerQuestion, answerIndex: answerIndex });
+                var bytes = Serializer.toBytes({
+                    messageType: SocketMessageType.AnswerQuestion,
+                    answerIndex: answerIndex
+                });
                 socket.send(Uint8Array.from(bytes).buffer);
                 // socket.send('{"$type": "SocketServer.AnswerQuestionSocketMessage, SocketServer", "AnswerIndex":' + answerIndex + '}');
                 $scope.model.gameInfos.push(message);
@@ -157,9 +168,7 @@ module.controller('mainCtrl', function ($scope) {
                 $scope.model.gameStarted = false;
                 $scope.model.gameInfos = [];
                 socket.close();
-                setTimeout(function () {
-                    doit();
-                }, 1);
+                getGateway();
                 $scope.$digest();
             }
             if (message.messageType === SocketMessageType.GameStarted) {
@@ -170,7 +179,6 @@ module.controller('mainCtrl', function ($scope) {
             $scope.$digest();
         };
     }
-    doit();
 });
 module.config(function ($locationProvider, $stateProvider, $urlRouterProvider) {
     $stateProvider
