@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Common.Utils
 {
-
     public class LateTaskResult<T>
     {
         public Task<T> Task { get; set; }
@@ -12,11 +12,21 @@ namespace Common.Utils
     public class LateTaskManager<T>
     {
         private Dictionary<string, LateTaskResult<T>> tasks = new Dictionary<string, LateTaskResult<T>>();
-
+        static object locker=new object();
         public Task<T> Build(string key)
         {
             var lateTaskResult = new LateTaskResult<T>();
-            tasks.Add(key, lateTaskResult);
+            lock (locker)
+            {
+                if (tasks == null)
+                {
+                    Console.WriteLine("er");
+                }
+                else
+                {
+                    tasks.Add(key, lateTaskResult);
+                }
+            }
             var deferred = new Task<T>(() =>
             {
                 tasks.Remove(key);

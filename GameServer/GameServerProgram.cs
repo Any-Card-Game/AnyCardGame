@@ -86,7 +86,7 @@ namespace GameServer
                      answersPerSecond = AnswerCount / (now - start).TotalSeconds;
                  }
                  Console.WriteLine($"Games Done: {GamesDone} Answers: {AnswerCount} LiveGames: {games.Count} APS: {answersPerSecond}");
-             }, null, 0, 1000);
+             }, null, 0, 500);
 
 
             Console.WriteLine("Press any [Enter] to close the host.");

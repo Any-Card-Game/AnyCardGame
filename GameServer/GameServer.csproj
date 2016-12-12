@@ -56,12 +56,12 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="js\lib.ts">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </TypeScriptCompile>
-    <TypeScriptCompile Include="js\sevens.ts">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </TypeScriptCompile>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Project>{8DDA742A-8276-4EB9-BDF7-6DD8C7EA6375}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="js\lib.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -74,10 +74,15 @@
     <Content Include="js\typescript\typescript.js" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Common\Common.csproj">
-      <Project>{8DDA742A-8276-4EB9-BDF7-6DD8C7EA6375}</Project>
-      <Name>Common</Name>
-    </ProjectReference>
+    <TypeScriptCompile Include="js\lib.ts">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="js\sevens.ts">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </TypeScriptCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="obj\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

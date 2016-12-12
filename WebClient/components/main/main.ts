@@ -128,6 +128,7 @@ module.controller('mainCtrl', function ($scope) {
     $scope.callback = {};
     $scope.model.gameInfos = [];
     $scope.model.totalGames = 0;
+    console.log(Serializer.toBytes({messageType: SocketMessageType.CreateNewGameRequest, gamepad: 'sevens'}));
     var getGateway = () => {
         fetch('http://127.0.0.1:3579/api/gateway').then((resp) => {
             return resp.json();

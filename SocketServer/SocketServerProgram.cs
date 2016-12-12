@@ -90,7 +90,7 @@ namespace SocketServer
             timer = new Timer((e) =>
             {
                 Console.WriteLine($"Users Connected: {UsersConnected} Messages Sent: {MessagesSent} Messages Received: {MessagesReceived}");
-            }, null, 0, 1000);
+            }, null, 0, 500);
 
 
 
@@ -132,6 +132,7 @@ namespace SocketServer
 
 
         public static Dictionary<string, SocketUser> users = new Dictionary<string, SocketUser>();
+        private static object locker = new object();
         private static Timer timer;
 
         public class SocketUser
@@ -141,15 +142,20 @@ namespace SocketServer
         }
         private static void OnConnected(CardGame user)
         {
-
-            users.Add(user.ID, new SocketUser() { UserContext = user });
-            UsersConnected++;
+            lock (locker)
+            {
+                users.Add(user.ID, new SocketUser() { UserContext = user });
+                UsersConnected++;
+            }
             //            Console.WriteLine("Client Connection From : " + user.Context.UserEndPoint.ToString());
         }
 
         private static void OnDisconnect(CardGame user)
         {
-            UsersConnected--;
+            lock (locker)
+            {
+                UsersConnected--;
+            }
             //            Console.WriteLine("Client disconnected From : " + user.ID + "         " + Process.GetCurrentProcess().Threads.Count);
         }
 
@@ -159,7 +165,11 @@ namespace SocketServer
 
             SocketMessage obj = Serializer.Deserialize(frame);
 
-            var uu = users[user.ID];
+            SocketUser uu;
+            lock (locker)
+            {
+                uu = users[user.ID];
+            }
             if (obj is CreateNewGameRequestSocketMessage)
             {
                 //                Console.WriteLine("Starting Game socket");
