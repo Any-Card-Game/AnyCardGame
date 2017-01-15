@@ -1,5 +1,8 @@
-﻿namespace Common.Redis.RedisMessages
+﻿using System;
+
+namespace Common.Redis.RedisMessages
 {
+    [Serializable]
     public abstract class RedisMessage
     {
         protected RedisMessage()
@@ -9,9 +12,11 @@
 
         public string Guid { get; set; }
     }
+    [Serializable]
     public class DefaultRedisMessage : RedisMessage
     {
     }
+    [Serializable]
     public enum RedisChannels
     {
         GetNextGatewayRequest,
@@ -19,16 +24,19 @@
         CreateNewGameRequest,
     }
 
+    [Serializable]
     public class NextGatewayResponseRedisMessage : RedisMessage
     {
         public string GatewayUrl { get; set; }
     }
+    [Serializable]
     public class CreateNewGameRequest : RedisMessage
     {
         public string GatewayKey { get; set; }
         public string UserKey { get; set; }
         public string GameName { get; set; }
     }
+    [Serializable]
     public class GameUpdateRedisMessage : RedisMessage
     {
         public string GameId { get; set; }
@@ -37,12 +45,14 @@
         public string GameServer { get; set; }
         public string UserKey { get; set; }
     }
+    [Serializable]
     public class GameServerRedisMessage : RedisMessage
     {
         public string GameId { get; set; }
         public int AnswerIndex { get; set; }
     }
 
+    [Serializable]
     public class CardGameQuestionTransport
     {
 
@@ -50,6 +60,7 @@
         public string Question { get; set; }
         public string[] Answers { get; set; }
     }
+    [Serializable]
     public enum GameStatus
     {
         Started,

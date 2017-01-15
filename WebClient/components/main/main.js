@@ -118,7 +118,7 @@ module.controller('mainCtrl', function ($scope) {
     $scope.callback = {};
     $scope.model.gameInfos = [];
     $scope.model.totalGames = 0;
-    console.log(Serializer.toBytes({ messageType: SocketMessageType.CreateNewGameRequest, gamepad: 'sevens' }));
+    // console.log(Serializer.toBytes({messageType: SocketMessageType.CreateNewGameRequest, gamepad: 'sevens'}));
     var getGateway = function () {
         fetch('http://127.0.0.1:3579/api/gateway').then(function (resp) {
             return resp.json();
@@ -133,18 +133,18 @@ module.controller('mainCtrl', function ($scope) {
         var dt;
         var sdt;
         socket.onopen = function () {
-            console.log("connected");
+            // console.log("connected");
             dt = new Date() | 0;
             sdt = new Date() | 0;
             var bytes = Serializer.toBytes({ messageType: SocketMessageType.CreateNewGameRequest, gamepad: 'sevens' });
             socket.send(Uint8Array.from(bytes).buffer);
         };
         socket.onclose = function () {
-            console.log("disconnected");
+            // console.log("disconnected");
         };
         var count = 0;
         socket.onmessage = function (event) {
-            //console.log(event.data);
+            // console.log(event.data);
             count++;
             if ((new Date() | 0) > (dt + 1000)) {
                 dt = new Date() | 0;
@@ -152,7 +152,7 @@ module.controller('mainCtrl', function ($scope) {
             }
             var message = Serializer.fromBytes(event.data);
             if (message.messageType === SocketMessageType.AskQuestion) {
-                console.log(message);
+                // console.log(message);
                 var answerIndex = 0;
                 if (message.answers.length > 0) {
                     answerIndex = 1;
