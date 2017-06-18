@@ -18,9 +18,10 @@ namespace RestServer2
             hostConfigs.UrlReservations.CreateAutomatically = true;
             timer = new Timer((e) =>
             {
-                lock (GatewayLogic.distribution)
+                var keyValuePairs = GatewayLogic.distribution.ToArray();
+                lock (keyValuePairs)
                 {
-                    Console.WriteLine(GatewayLogic.distribution.Aggregate("", (a, b) => a + b.Key + ":" + b.Value + "|"));
+                    Console.WriteLine(keyValuePairs.Aggregate("", (a, b) => a + b.Key + ":" + b.Value + "|"));
                 }
             }, null, 0, 500);
             

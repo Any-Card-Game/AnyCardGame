@@ -1,39 +1,37 @@
 ﻿using System;
 
-namespace Common.Redis.RedisMessages
+namespace Common.Messages
 {
     [Serializable]
-    public abstract class RedisMessage
+    public abstract class ServerMessage
     {
     }
     [Serializable]
-    public class DefaultRedisMessage : RedisMessage
+    public class DefaultServerMessage : ServerMessage
     {
     }
 
     [Serializable]
-    public class NextGatewayResponseRedisMessage : RedisMessage
+    public class NextGatewayResponseServerMessage : ServerMessage
     {
         public string GatewayUrl { get; set; }
     }
     [Serializable]
-    public class CreateNewGameRequest : RedisMessage
+    public class CreateNewGameRequest : ServerMessage
     {
-        public string GatewayKey { get; set; }
         public string UserKey { get; set; }
         public string GameName { get; set; }
     }
     [Serializable]
-    public class GameUpdateRedisMessage : RedisMessage
+    public class GameUpdateServerMessage : ServerMessage
     {
         public string GameId { get; set; }
         public GameStatus GameStatus { get; set; }
         public CardGameQuestionTransport Question { get; set; }
-        public string GameServer { get; set; }
         public string UserKey { get; set; }
     }
     [Serializable]
-    public class GameServerRedisMessage : RedisMessage
+    public class GameServerServerMessage : ServerMessage
     {
         public string GameId { get; set; }
         public int AnswerIndex { get; set; }

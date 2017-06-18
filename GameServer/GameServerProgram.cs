@@ -9,8 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BrokerClient;
 using BrokerCommon;
-using Common.Redis;
-using Common.Redis.RedisMessages;
+using Common.Messages;
 using GameServer.CardGameLibrary;
 using Jint;
 using Jint.Native;
@@ -36,58 +35,53 @@ namespace GameServer
         public int Answer { get; set; }
         public CreateNewGameRequest InitialRequest { get; set; }
         public GameServerProgram.DataClass DataClass { get; set; }
+        public Swimmer Gateway { get; set; }
     }
 
     public class GameServerProgram
     {
         private static Dictionary<string, GameManager> games = new Dictionary<string, GameManager>();
-        static string gameServerKey = Guid.NewGuid().ToString("N");
         private static ClientBrokerManager client;
         static void Main(string[] args)
         {
             var threadManager = LocalThreadManager.Start();
 
-            Console.WriteLine("Game Server Key " + gameServerKey);
-
             client = new ClientBrokerManager();
             client.ConnectToBroker("127.0.0.1");
             client.OnReady(() =>
             {
-                client.GetPool("CreateNewGameRequest", pool =>
+                Console.WriteLine("Game Server Key " + client.MySwimmerId);
+                client.OnMessage((from,message) =>
                 {
-                    pool.OnMessage((q) =>
-                    {
-                        var gameId = Guid.NewGuid().ToString("N");
-                        var createNewGameRequest = q.GetJson<CreateNewGameRequest>();
-                        GameManager gameManager = new GameManager(gameId) { InitialRequest = createNewGameRequest };
-
-                        games.Add(gameId, gameManager);
-                        //                Console.WriteLine("New Game Request " + games.Count);
-                        client.GetPool("GameUpdate" + createNewGameRequest.GatewayKey, guPool =>
-                        {
-                            guPool.SendMessage(Query.Build("GameUpdate", new GameUpdateRedisMessage()
-                            {
-                                GameId = gameId,
-                                UserKey = createNewGameRequest.UserKey,
-                                GameServer = gameServerKey,
-                                GameStatus = GameStatus.Started
-                            }));
-                            startGame(gameManager);
-
-                        });
-
-                    });
-                    pool.JoinPool(() =>
-                    {
-
-                    });
+                    var gameServerResponse = message.GetJson<GameServerServerMessage>();
+                    games[gameServerResponse.GameId].DataClass.curAnswered(gameServerResponse.AnswerIndex);
                 });
-                client.GetPool("GameServer" + gameServerKey, pool =>
+                client.GetPool("GameServers", pool =>
                 {
-                    pool.OnMessage((q) =>
+                    pool.OnMessage((from, message) =>
                     {
-                        var gameServerResponse = q.GetJson<GameServerRedisMessage>();
-                        games[gameServerResponse.GameId].DataClass.curAnswered(gameServerResponse.AnswerIndex);
+                        switch (message.Method)
+                        {
+                            case "NewGame":
+                                var gameId = Guid.NewGuid().ToString("N");
+                                var createNewGameRequest = message.GetJson<CreateNewGameRequest>();
+                                GameManager gameManager = new GameManager(gameId) { Gateway=from,InitialRequest = createNewGameRequest };
+
+                                games.Add(gameId, gameManager);
+
+                                client.SendMessage(from.Id,Query.Build("GameUpdate", new GameUpdateServerMessage()
+                                {
+                                    GameId = gameId,
+                                    UserKey = createNewGameRequest.UserKey,
+                                    GameStatus = GameStatus.Started
+                                }));
+                                    startGame(gameManager);
+                                //                Console.WriteLine("New Game Request " + games.Count);
+
+                                break;
+
+                        }
+                      
 
                     });
                     pool.JoinPool(() =>
@@ -135,29 +129,25 @@ namespace GameServer
             public void questionAsked(string username, string question, string[] answers, Action<int> a)
             {
                 curAnswered = a;
-                client.GetPool("GameUpdate" + GameManager.InitialRequest.GatewayKey, guPool =>
-                {
-                    guPool.SendMessage(Query.Build("GameUpdate" + GameManager.InitialRequest.GatewayKey, new GameUpdateRedisMessage()
-                    {
-                        GameServer = gameServerKey,
-                        GameId = GameManager.GameId,
-                        UserKey = GameManager.InitialRequest.UserKey,
-                        Question = new CardGameQuestionTransport()
-                        {
-                            User = username,
-                            Question = question,
-                            Answers = answers,
-                        },
-                        GameStatus = GameStatus.AskQuestion
-                    }));
-                    if (start == DateTime.MinValue)
-                    {
-                        start = DateTime.Now;
-                    }
-                    AnswerCount++;
 
-                });
- 
+                client.SendMessage(GameManager.Gateway.Id, Query.Build("GameUpdate", new GameUpdateServerMessage()
+                {
+                    GameId = GameManager.GameId,
+                    UserKey = GameManager.InitialRequest.UserKey,
+                    Question = new CardGameQuestionTransport()
+                    {
+                        User = username,
+                        Question = question,
+                        Answers = answers,
+                    },
+                    GameStatus = GameStatus.AskQuestion
+                }));
+                if (start == DateTime.MinValue)
+                {
+                    start = DateTime.Now;
+                }
+                AnswerCount++;
+
                 //                Console.WriteLine(username + " " + question + " " + string.Join(",", answers));
             }
             public void setWinner(object username)
@@ -165,24 +155,17 @@ namespace GameServer
                 //                Console.WriteLine(username);
                 GamesDone++;
 
-                client.GetPool("GameUpdate" + GameManager.InitialRequest.GatewayKey, guPool =>
+                client.SendMessage(GameManager.Gateway.Id,Query.Build("GameUpdate", new GameUpdateServerMessage()
                 {
-
-                    guPool.SendMessage(Query.Build("GameUpdate" + GameManager.InitialRequest.GatewayKey, new GameUpdateRedisMessage()
-                    {
-                        GameServer = gameServerKey,
-                        GameId = GameManager.GameId,
-                        UserKey = GameManager.InitialRequest.UserKey,
-                        GameStatus = GameStatus.GameOver
-                    }));
-                    if (start == DateTime.MinValue)
-                    {
-                        start = DateTime.Now;
-                    }
-                    AnswerCount++;
-
-                });
-
+                    GameId = GameManager.GameId,
+                    UserKey = GameManager.InitialRequest.UserKey,
+                    GameStatus = GameStatus.GameOver
+                }));
+                if (start == DateTime.MinValue)
+                {
+                    start = DateTime.Now;
+                }
+                AnswerCount++;
 
                 games.Remove(GameManager.GameId);
                 //                Console.WriteLine("0Game over " + games.Count);

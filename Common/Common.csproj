@@ -76,8 +76,7 @@
     <Compile Include="Utils\Mongo\QueryField.cs" />
     <Compile Include="Utils\Mongo\IMongoModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Redis\RedisClient.cs" />
-    <Compile Include="Redis\RedisMessages\NextGatewayRedisMessage.cs" />
+    <Compile Include="Messages\ServerMessages.cs" />
     <Compile Include="Utils\LateTask.cs" />
     <Compile Include="Utils\Mongo\MongoQueryUtils.cs" />
     <Compile Include="Utils\Utils.cs" />

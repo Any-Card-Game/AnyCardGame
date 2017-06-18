@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using BrokerClient;
 using BrokerCommon;
-using Common.Redis;
-using Common.Redis.RedisMessages;
+using Common.Messages;
 using RestServer.Common;
 using RestServer.Modules;
 
@@ -22,11 +21,12 @@ namespace RestServer.Logic
                 string gatewayUrl = null;
                 Action getPool = () =>
                 {
-                    client.GetPool("GetNextGateway", pool =>
+                    client.GetPool("Gateways", pool =>
                     {
-                        pool.SendMessageWithResponse<NextGatewayResponseRedisMessage>(Query.Build("Next"),
-                            (nextGateway) =>
+                        pool.SendMessageWithResponse(Query.Build("NextGateway"),
+                            (response) =>
                             {
+                                var nextGateway = response.GetJson<NextGatewayResponseServerMessage>();
                                 if (!distribution.ContainsKey(nextGateway.GatewayUrl))
                                 {
                                     distribution[nextGateway.GatewayUrl] = 0;

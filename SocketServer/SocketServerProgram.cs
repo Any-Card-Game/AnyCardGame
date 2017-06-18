@@ -10,8 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BrokerClient;
 using BrokerCommon;
-using Common.Redis;
-using Common.Redis.RedisMessages;
+using Common.Messages;
 using Newtonsoft.Json;
 using WebSocketSharp;
 using WebSocketSharp.Server;
@@ -23,7 +22,6 @@ namespace SocketServer
     {
         private static ClientBrokerManager client;
 
-        private static string GatewayKey;
 
         static void Main(string[] args)
         {
@@ -33,68 +31,71 @@ namespace SocketServer
             string url = Utils.GetPublicIP() + ":" + port;
             Console.WriteLine(url);
 
-            GatewayKey = Guid.NewGuid().ToString("N");
-            Console.WriteLine("Gateway Key " + GatewayKey);
             client = new ClientBrokerManager();
             client.ConnectToBroker("127.0.0.1");
             client.OnReady(() =>
             {
+                Console.WriteLine("Gateway Key " + client.MySwimmerId);
 
-                client.GetPool("Gateway" + GatewayKey, pool =>
+                client.OnMessage((from,message) =>
                 {
-                    pool.JoinPool(() => { });
+                    switch (message.Method)
+                    {
+                        case "GameUpdate":
+                            var rr = message.GetJson<GameUpdateServerMessage>();
+                            users[rr.UserKey].GameData = rr;
+                            users[rr.UserKey].GameServer = from;
+                            SocketMessage str;
+                            switch (rr.GameStatus)
+                            {
+                                case GameStatus.Started:
+                                    //                        Console.WriteLine("Started" + rr.GameId);
+                                    str = new GameStartedSocketMessage();
+                                    break;
+                                case GameStatus.GameOver:
+                                    //                        Console.WriteLine("Game Over"+rr.GameId);
+                                    str = new GameOverSocketMessage();
+                                    break;
+                                case GameStatus.AskQuestion:
+                                    //                        Console.WriteLine("Ask Question" + rr.GameId);
+                                    str = new AskQuestionSocketMessage()
+                                    {
+                                        Question = rr.Question.Question,
+                                        Answers = rr.Question.Answers,
+                                        User = rr.Question.User,
+                                    };
+
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+
+                            var bytes = Serializer.Serialize(str);
+
+                            users[rr.UserKey].UserContext.SendMessage(bytes);
+                            MessagesSent++;
+                            break;
+                    }
                 });
 
-                client.GetPool("GetNextGateway", pool =>
+
+
+                client.GetPool("Gateways", pool =>
                 {
-                    pool.OnMessageWithResponse((query, callback) =>
+                    pool.OnMessageWithResponse((from, message, respond) =>
                     {
-                        callback(query.Respond(new NextGatewayResponseRedisMessage()
+                        switch (message.Method)
                         {
-                            GatewayUrl = url
-                        }));
-                    });
-                    pool.JoinPool(() => { });
-                });
-
-                client.GetPool("GameUpdate" + GatewayKey, pool =>
-                {
-                    pool.OnMessage((query) =>
-                    {
-
-                        var rr = query.GetJson<GameUpdateRedisMessage>();
-                        users[rr.UserKey].GameData = rr;
-
-                        SocketMessage str;
-                        switch (rr.GameStatus)
-                        {
-                            case GameStatus.Started:
-                                //                        Console.WriteLine("Started" + rr.GameId);
-                                str = new GameStartedSocketMessage();
-                                break;
-                            case GameStatus.GameOver:
-                                //                        Console.WriteLine("Game Over"+rr.GameId);
-                                str = new GameOverSocketMessage();
-                                break;
-                            case GameStatus.AskQuestion:
-                                //                        Console.WriteLine("Ask Question" + rr.GameId);
-                                str = new AskQuestionSocketMessage()
+                            case "NextGateway":
+                                respond(message.Respond(new NextGatewayResponseServerMessage()
                                 {
-                                    Question = rr.Question.Question,
-                                    Answers = rr.Question.Answers,
-                                    User = rr.Question.User,
-                                };
-
+                                    GatewayUrl = url
+                                }));
                                 break;
-                            default:
-                                throw new ArgumentOutOfRangeException();
                         }
-
-                        var bytes = Serializer.Serialize(str);
-
-                        users[rr.UserKey].UserContext.SendMessage(bytes);
-                        MessagesSent++;
                     });
+
+
                     pool.JoinPool(() => { });
                 });
                  
@@ -153,7 +154,8 @@ namespace SocketServer
 
         public class SocketUser
         {
-            public GameUpdateRedisMessage GameData { get; set; }
+            public GameUpdateServerMessage GameData { get; set; }
+            public Swimmer GameServer { get; set; }
             public CardGame UserContext { get; set; }
         }
         private static void OnConnected(CardGame user)
@@ -189,26 +191,22 @@ namespace SocketServer
             if (obj is CreateNewGameRequestSocketMessage)
             {
                 //                Console.WriteLine("Starting Game socket");
-                client.GetPool("CreateNewGameRequest", (pool) =>
+                client.GetPool("GameServers", (pool) =>
                 {
-                    pool.SendMessage(Query.Build("NameGame", new CreateNewGameRequest()
+                    pool.SendMessage(Query.Build("NewGame", new CreateNewGameRequest()
                     {
-                        GatewayKey = GatewayKey,
                         UserKey = user.ID,
                         GameName = "sevens"
                     }));
-                }); 
+                });
             }
             else if (obj is AnswerQuestionSocketMessage)
             {
-                client.GetPool("GameServer" + uu.GameData.GameServer, (pool) =>
+                client.SendMessage(uu.GameServer.Id, Query.Build("Answer", new GameServerServerMessage()
                 {
-                    pool.SendMessage(Query.Build("Answer", new GameServerRedisMessage()
-                    {
-                        GameId = uu.GameData.GameId,
-                        AnswerIndex = ((AnswerQuestionSocketMessage)obj).AnswerIndex
-                    }));
-                });
+                    GameId = uu.GameData.GameId,
+                    AnswerIndex = ((AnswerQuestionSocketMessage)obj).AnswerIndex
+                }));
             }
             /*
 

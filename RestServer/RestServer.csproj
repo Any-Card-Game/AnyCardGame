@@ -102,7 +102,6 @@
     <Compile Include="Common\Nancy\ServerErrorException.cs" />
     <Compile Include="Common\Nancy\TokenMetaData.cs" />
     <Compile Include="Common\Nancy\UserJwtModel.cs" />
-    <Compile Include="Common\RestRedisClient.cs" />
     <Compile Include="Logic\GatewayLogic.cs" />
     <Compile Include="Logic\UserLogic.cs" />
     <Compile Include="Modules\GatewayModule.cs" />
