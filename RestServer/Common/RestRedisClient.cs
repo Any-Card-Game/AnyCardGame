@@ -3,6 +3,7 @@ using Common.Redis.RedisMessages;
 
 namespace RestServer.Common
 {
+/*
     public static class RestRedisClient
     {
         private static RedisClient client;
@@ -16,4 +17,5 @@ namespace RestServer.Common
 
         public static RedisClient Client => client;
     }
+*/
 }

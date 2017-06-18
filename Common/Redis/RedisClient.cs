@@ -1,4 +1,4 @@
-﻿//#define log
+﻿/*//#define log
 
 using System;
 using System.Collections.Generic;
@@ -27,7 +27,7 @@ namespace Common.Redis
         {
             /*            var redisIP = "198.211.107.101";
                         var redisPort = 6379;
-            */
+            #1#
             var redisIP = "127.0.0.1";
             var redisPort = 6379;
             var options = ConfigurationOptions.Parse($"{redisIP}:{redisPort}");
@@ -178,4 +178,4 @@ namespace Common.Redis
         }
     }
 
-}
+}*/

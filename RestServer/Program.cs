@@ -16,13 +16,14 @@ namespace RestServer2
             var uri = new Uri("http://127.0.0.1:3579");
             HostConfiguration hostConfigs = new HostConfiguration();
             hostConfigs.UrlReservations.CreateAutomatically = true;
-       /*     timer = new Timer((e) =>
+            timer = new Timer((e) =>
             {
                 lock (GatewayLogic.distribution)
                 {
                     Console.WriteLine(GatewayLogic.distribution.Aggregate("", (a, b) => a + b.Key + ":" + b.Value + "|"));
                 }
-            }, null, 0, 500);*/
+            }, null, 0, 500);
+            
 
             using (var host = new NancyHost(uri, new Bootstrapper(), hostConfigs))
             {

@@ -5,23 +5,10 @@ namespace Common.Redis.RedisMessages
     [Serializable]
     public abstract class RedisMessage
     {
-        protected RedisMessage()
-        {
-            Guid = System.Guid.NewGuid().ToString("N");
-        }
-
-        public string Guid { get; set; }
     }
     [Serializable]
     public class DefaultRedisMessage : RedisMessage
     {
-    }
-    [Serializable]
-    public enum RedisChannels
-    {
-        GetNextGatewayRequest,
-        GetNextGatewayResponse,
-        CreateNewGameRequest,
     }
 
     [Serializable]
