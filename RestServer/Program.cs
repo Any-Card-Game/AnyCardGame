@@ -1,39 +1,61 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
-using RestServer;
+using BrokerClient;
+using BrokerCommon;
+using Nancy.Hosting.Self;
 using RestServer.Logic;
 
-namespace RestServer2
+namespace RestServer
 {
-    using System;
-    using Nancy.Hosting.Self;
-
-    class Program
+    public class Program
     {
         private static Timer timer;
+        public static ClientBrokerManager client;
+        public static ClientPool gatewayPool;
+        public static string currentFastestGateway;
+
         static void Main(string[] args)
         {
-            var uri = new Uri("http://127.0.0.1:3579");
-            HostConfiguration hostConfigs = new HostConfiguration();
-            hostConfigs.UrlReservations.CreateAutomatically = true;
-            timer = new Timer((e) =>
+            var ltm = LocalThreadManager.Start();
+            client = new ClientBrokerManager();
+            client.ConnectToBroker("127.0.0.1");
+            client.OnReady(() =>
             {
-                var keyValuePairs = GatewayLogic.distribution.ToArray();
-                lock (keyValuePairs)
+
+                client.GetPool("Gateways", pool =>
                 {
-                    Console.WriteLine(keyValuePairs.Aggregate("", (a, b) => a + b.Key + ":" + b.Value + "|"));
-                }
-            }, null, 0, 500);
-            
+                    gatewayPool = pool;
 
-            using (var host = new NancyHost(uri, new Bootstrapper(), hostConfigs))
-            {
-                host.Start();
+                    GatewayLogic.GetFastestGateway(gateway =>
+                    {
+                        currentFastestGateway = gateway;
+                        var uri = new Uri("http://127.0.0.1:3579");
+                        HostConfiguration hostConfigs = new HostConfiguration();
+                        hostConfigs.UrlReservations.CreateAutomatically = true;
+                        timer = new Timer((e) =>
+                        {
+                            GatewayLogic.GetFastestGateway(gw =>
+                            {
+                                currentFastestGateway = gw;
+                                Console.WriteLine("Current fastest gateway: " + currentFastestGateway);
+                            });
+                        }, null, 0, 500);
 
-                Console.WriteLine("Your application is running on " + uri);
-                Console.WriteLine("Press any [Enter] to close the host.");
-                Console.ReadLine();
-            }
+
+                        using (var host = new NancyHost(uri, new Bootstrapper(), hostConfigs))
+                        {
+                            host.Start();
+
+                            Console.WriteLine("Your application is running on " + uri);
+                            Console.ReadLine();
+                        }
+
+                    });
+
+                });
+            });
+            ltm.Process();
         }
     }
 }

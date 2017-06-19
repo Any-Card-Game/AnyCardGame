@@ -37,11 +37,11 @@
   <ItemGroup>
     <Reference Include="BrokerClient, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\ServerBroker\BrokerClient\bin\Debug\BrokerClient.exe</HintPath>
+      <HintPath>..\..\..\ServerBroker\BrokerClient\bin\Release\BrokerClient.exe</HintPath>
     </Reference>
     <Reference Include="BrokerCommon, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\ServerBroker\BrokerClient\bin\Debug\BrokerCommon.dll</HintPath>
+      <HintPath>..\..\..\ServerBroker\BrokerClient\bin\Release\BrokerCommon.dll</HintPath>
     </Reference>
     <Reference Include="JWT, Version=1.3.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\JWT.1.3.4\lib\3.5\JWT.dll</HintPath>

@@ -8,11 +8,14 @@ namespace RestServer.Modules
     {
         public GatewayModule():base("api/gateway")
         {
-            Get["/",true] = async (_, ct) =>
+            Get["/"] = (_) =>
             {
 //                this.RequiresAuthentication();
                 var model = ValidateRequest<GetGatewayRequest>();
-                var response = await GatewayLogic.GetFastestGateway(model);
+                var response =  new GetGatewayResponse()
+                {
+                    GatewayUrl=Program.currentFastestGateway
+                };
                 return this.Success(response);
             };
         }

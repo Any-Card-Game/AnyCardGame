@@ -2,28 +2,21 @@
 
 namespace Common.Messages
 {
-    [Serializable]
-    public abstract class ServerMessage
-    {
-    }
-    [Serializable]
-    public class DefaultServerMessage : ServerMessage
-    {
-    }
+
 
     [Serializable]
-    public class NextGatewayResponseServerMessage : ServerMessage
+    public class NextGatewayResponseServerMessage 
     {
         public string GatewayUrl { get; set; }
     }
     [Serializable]
-    public class CreateNewGameRequest : ServerMessage
+    public class CreateNewGameRequest 
     {
         public string UserKey { get; set; }
         public string GameName { get; set; }
     }
     [Serializable]
-    public class GameUpdateServerMessage : ServerMessage
+    public class GameUpdateServerMessage 
     {
         public string GameId { get; set; }
         public GameStatus GameStatus { get; set; }
@@ -31,7 +24,7 @@ namespace Common.Messages
         public string UserKey { get; set; }
     }
     [Serializable]
-    public class GameServerServerMessage : ServerMessage
+    public class GameServerServerMessage 
     {
         public string GameId { get; set; }
         public int AnswerIndex { get; set; }
@@ -40,7 +33,6 @@ namespace Common.Messages
     [Serializable]
     public class CardGameQuestionTransport
     {
-
         public string User { get; set; }
         public string Question { get; set; }
         public string[] Answers { get; set; }
