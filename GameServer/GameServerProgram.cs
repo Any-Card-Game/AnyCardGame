@@ -7,8 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using BrokerClient;
-using BrokerCommon;
 using Common.Messages;
 using GameServer.CardGameLibrary;
 using Jint;
@@ -20,6 +18,8 @@ using Jint.Runtime;
 using Jint.Runtime.Debugger;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
+using OnPoolClient;
+using OnPoolCommon;
 
 namespace GameServer
 {
@@ -35,65 +35,58 @@ namespace GameServer
         public int Answer { get; set; }
         public CreateNewGameRequest InitialRequest { get; set; }
         public GameServerProgram.DataClass DataClass { get; set; }
-        public Swimmer Gateway { get; set; }
+        public Client Gateway { get; set; }
     }
 
     public class GameServerProgram
     {
         private static Dictionary<string, GameManager> games = new Dictionary<string, GameManager>();
-        private static ClientBrokerManager client;
+        private static OnPoolClient.OnPoolClient client;
         static void Main(string[] args)
         {
             var threadManager = LocalThreadManager.Start();
 
-            client = new ClientBrokerManager();
-            client.ConnectToBroker("127.0.0.1");
+            client = new OnPoolClient.OnPoolClient();
             client.OnReady(() =>
             {
-                Console.WriteLine("Game Server Key " + client.MySwimmerId);
-                client.OnMessage((from,message) =>
+                Console.WriteLine("Game Server Key " + client.MyClientId);
+                client.OnMessage((from, message, respond) =>
                 {
                     var gameServerResponse = message.GetJson<GameServerServerMessage>();
                     games[gameServerResponse.GameId].DataClass.curAnswered(gameServerResponse.AnswerIndex);
                 });
-                client.GetPool("GameServers", pool =>
+                client.JoinPool("GameServers", (from, message, respond) =>
                 {
-                    pool.OnMessage((from, message) =>
+                    switch (message.Method)
                     {
-                        switch (message.Method)
-                        {
-                            case "NewGame":
-                                var gameId = Guid.NewGuid().ToString("N");
-                                var createNewGameRequest = message.GetJson<CreateNewGameRequest>();
-                                GameManager gameManager = new GameManager(gameId) { Gateway=from,InitialRequest = createNewGameRequest };
+                        case "NewGame":
+                            var gameId = Guid.NewGuid().ToString("N");
+                            var createNewGameRequest = message.GetJson<CreateNewGameRequest>();
+                            GameManager gameManager = new GameManager(gameId) { Gateway = from, InitialRequest = createNewGameRequest };
 
-                                games.Add(gameId, gameManager);
+                            games.Add(gameId, gameManager);
 
-                                client.SendMessage(from.Id,Query.Build("GameUpdate", new GameUpdateServerMessage()
-                                {
-                                    GameId = gameId,
-                                    UserKey = createNewGameRequest.UserKey,
-                                    GameStatus = GameStatus.Started
-                                }));
-                                    startGame(gameManager);
-                                //                Console.WriteLine("New Game Request " + games.Count);
+                            client.SendMessage(from.Id, Query.Build("GameUpdate",QueryDirection.Request, QueryType.Client,new GameUpdateServerMessage()
+                            {
+                                GameId = gameId,
+                                UserKey = createNewGameRequest.UserKey,
+                                GameStatus = GameStatus.Started
+                            }));
+                            startGame(gameManager);
+                            //                Console.WriteLine("New Game Request " + games.Count);
 
-                                break;
+                            break;
 
-                        }
-                      
+                    }
 
-                    });
-                    pool.JoinPool(() =>
-                    {
 
-                    });
                 });
 
             });
-           
+            client.ConnectToServer("127.0.0.1");
 
-            timer = new Timer((e) =>
+
+            /*timer = new Timer((e) =>
              {
                  var now = DateTime.Now;
                  var answersPerSecond = 0.0;
@@ -103,11 +96,12 @@ namespace GameServer
                      answersPerSecond = AnswerCount / (now - start).TotalSeconds;
                  }
                  Console.WriteLine($"Games Done: {GamesDone} Answers: {AnswerCount} LiveGames: {games.Count} APS: {answersPerSecond}");
-             }, null, 0, 500);
+             }, null, 0, 500)*/;
 
 
             Console.WriteLine("Running.");
             threadManager.Process();
+            Console.ReadLine();
         }
 
         private static DateTime start = DateTime.MinValue;
@@ -130,7 +124,7 @@ namespace GameServer
             {
                 curAnswered = a;
 
-                client.SendMessage(GameManager.Gateway.Id, Query.Build("GameUpdate", new GameUpdateServerMessage()
+                client.SendMessage(GameManager.Gateway.Id, Query.Build("GameUpdate",QueryDirection.Request, QueryType.Client,new GameUpdateServerMessage()
                 {
                     GameId = GameManager.GameId,
                     UserKey = GameManager.InitialRequest.UserKey,
@@ -155,7 +149,7 @@ namespace GameServer
                 //                Console.WriteLine(username);
                 GamesDone++;
 
-                client.SendMessage(GameManager.Gateway.Id,Query.Build("GameUpdate", new GameUpdateServerMessage()
+                client.SendMessage(GameManager.Gateway.Id, Query.Build("GameUpdate", QueryDirection.Request, QueryType.Client, new GameUpdateServerMessage()
                 {
                     GameId = GameManager.GameId,
                     UserKey = GameManager.InitialRequest.UserKey,

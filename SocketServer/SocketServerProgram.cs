@@ -8,10 +8,10 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using BrokerClient;
-using BrokerCommon;
 using Common.Messages;
 using Newtonsoft.Json;
+using OnPoolClient;
+using OnPoolCommon;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
@@ -20,7 +20,7 @@ namespace SocketServer
 {
     class SocketServerProgram
     {
-        private static ClientBrokerManager client;
+        private static OnPoolClient.OnPoolClient client;
 
 
         static void Main(string[] args)
@@ -31,13 +31,12 @@ namespace SocketServer
             string url = Utils.GetPublicIP() + ":" + port;
             Console.WriteLine(url);
 
-            client = new ClientBrokerManager();
-            client.ConnectToBroker("127.0.0.1");
+            client = new OnPoolClient.OnPoolClient();
             client.OnReady(() =>
             {
-                Console.WriteLine("Gateway Key " + client.MySwimmerId);
+                Console.WriteLine("Gateway Key " + client.MyClientId);
 
-                client.OnMessage((from,message) =>
+                client.OnMessage((from,message,respond) =>
                 {
                     switch (message.Method)
                     {
@@ -78,40 +77,36 @@ namespace SocketServer
                     }
                 });
 
-
-
-                client.GetPool("Gateways", pool =>
+                client.JoinPool("Gateways", (from, message, respond) =>
                 {
-                    pool.OnMessageWithResponse((from, message, respond) =>
+                    switch (message.Method)
                     {
-                        switch (message.Method)
-                        {
-                            case "NextGateway":
-                                respond(message.Respond(new NextGatewayResponseServerMessage()
-                                {
-                                    GatewayUrl = url
-                                }));
-                                break;
-                        }
-                    });
-
-
-                    pool.JoinPool(() => { });
+                        case "NextGateway":
+                            respond(QueryParam.Json(new NextGatewayResponseServerMessage()
+                            {
+                                GatewayUrl = url
+                            }));
+                            break;
+                    }
                 });
                  
             });
+            client.ConnectToServer("127.0.0.1");
 
 
             var wssv = new WebSocketServer("ws://" + url);
             wssv.AddWebSocketService<CardGame>("/");
             wssv.Start();
 
-            timer = new Timer((e) =>
+           /* timer = new Timer((e) =>
             {
                 Console.WriteLine($"Users Connected: {UsersConnected} Messages Sent: {MessagesSent} Messages Received: {MessagesReceived}");
-            }, null, 0, 500);
+            }, null, 0, 500);*/
 
             threadManager.Process();
+
+
+            Console.ReadLine();
         }
 
         public static int UsersConnected { get; set; }
@@ -155,7 +150,7 @@ namespace SocketServer
         public class SocketUser
         {
             public GameUpdateServerMessage GameData { get; set; }
-            public Swimmer GameServer { get; set; }
+            public Client GameServer { get; set; }
             public CardGame UserContext { get; set; }
         }
         private static void OnConnected(CardGame user)
@@ -191,18 +186,16 @@ namespace SocketServer
             if (obj is CreateNewGameRequestSocketMessage)
             {
                 //                Console.WriteLine("Starting Game socket");
-                client.GetPool("GameServers", (pool) =>
+
+                client.SendPoolMessage("GameServers", Query.Build("NewGame", QueryDirection.Request, QueryType.Client, new CreateNewGameRequest()
                 {
-                    pool.SendMessage(Query.Build("NewGame", new CreateNewGameRequest()
-                    {
-                        UserKey = user.ID,
-                        GameName = "sevens"
-                    }));
-                });
+                    UserKey = user.ID,
+                    GameName = "sevens"
+                }));
             }
             else if (obj is AnswerQuestionSocketMessage)
             {
-                client.SendMessage(uu.GameServer.Id, Query.Build("Answer", new GameServerServerMessage()
+                client.SendMessage(uu.GameServer.Id, Query.Build("Answer",QueryDirection.Request, QueryType.Client,new GameServerServerMessage()
                 {
                     GameId = uu.GameData.GameId,
                     AnswerIndex = ((AnswerQuestionSocketMessage)obj).AnswerIndex

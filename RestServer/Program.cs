@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
-using BrokerClient;
-using BrokerCommon;
 using Nancy.Hosting.Self;
+using OnPoolCommon;
 using RestServer.Logic;
 
 namespace RestServer
@@ -11,51 +10,38 @@ namespace RestServer
     public class Program
     {
         private static Timer timer;
-        public static ClientBrokerManager client;
-        public static ClientPool gatewayPool;
+        public static OnPoolClient.OnPoolClient client;
         public static string currentFastestGateway;
 
         static void Main(string[] args)
         {
             var ltm = LocalThreadManager.Start();
-            client = new ClientBrokerManager();
-            client.ConnectToBroker("127.0.0.1");
+            client = new OnPoolClient.OnPoolClient();
             client.OnReady(() =>
             {
-
-                client.GetPool("Gateways", pool =>
+                timer = new Timer((e) =>
                 {
-                    gatewayPool = pool;
-
-                    GatewayLogic.GetFastestGateway(gateway =>
+                    GatewayLogic.GetFastestGateway(gw =>
                     {
-                        currentFastestGateway = gateway;
-                        var uri = new Uri("http://127.0.0.1:3579");
-                        HostConfiguration hostConfigs = new HostConfiguration();
-                        hostConfigs.UrlReservations.CreateAutomatically = true;
-                        timer = new Timer((e) =>
-                        {
-                            GatewayLogic.GetFastestGateway(gw =>
-                            {
-                                currentFastestGateway = gw;
-                                Console.WriteLine("Current fastest gateway: " + currentFastestGateway);
-                            });
-                        }, null, 0, 500);
-
-
-                        using (var host = new NancyHost(uri, new Bootstrapper(), hostConfigs))
-                        {
-                            host.Start();
-
-                            Console.WriteLine("Your application is running on " + uri);
-                            Console.ReadLine();
-                        }
-
+                        currentFastestGateway = gw;
+                        Console.WriteLine("Current fastest gateway: " + currentFastestGateway);
                     });
+                }, null, 0, 5000);
 
-                });
             });
+            client.ConnectToServer("127.0.0.1");
             ltm.Process();
+
+            var uri = new Uri("http://127.0.0.1:3579");
+            HostConfiguration hostConfigs = new HostConfiguration();
+            hostConfigs.UrlReservations.CreateAutomatically = true;
+            using (var host = new NancyHost(uri, new Bootstrapper(), hostConfigs))
+            {
+                host.Start();
+
+                Console.WriteLine("Your application is running on " + uri);
+              Console.ReadLine();
+            }
         }
     }
 }
