@@ -54,6 +54,7 @@ namespace GameServer
                 {
                     var gameServerResponse = message.GetJson<GameServerServerMessage>();
                     games[gameServerResponse.GameId].DataClass.curAnswered(gameServerResponse.AnswerIndex);
+                    respond(null);
                 });
                 client.JoinPool("GameServers").OnMessage((from, message, respond) =>
                 {
@@ -74,6 +75,7 @@ namespace GameServer
                             });
                             startGame(gameManager);
                             //                Console.WriteLine("New Game Request " + games.Count);
+                            respond(null);
 
                             break;
 

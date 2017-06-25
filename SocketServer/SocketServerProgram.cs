@@ -73,6 +73,7 @@ namespace SocketServer
 
                             users[rr.UserKey].UserContext.SendMessage(bytes);
                             MessagesSent++;
+                            respond(null);
                             break;
                     }
                 });
