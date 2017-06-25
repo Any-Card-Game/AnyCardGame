@@ -36,7 +36,7 @@ namespace SocketServer
             {
                 Console.WriteLine("Gateway Key " + client.MyClientId);
 
-                client.OnMessage((from,message,respond) =>
+                client.OnMessage((from, message, respond) =>
                 {
                     switch (message.Method)
                     {
@@ -77,19 +77,19 @@ namespace SocketServer
                     }
                 });
 
-                client.JoinPool("Gateways", (from, message, respond) =>
+                client.JoinPool("Gateways").OnMessage((from, message, respond) =>
                 {
                     switch (message.Method)
                     {
                         case "NextGateway":
-                            respond(QueryParam.Json(new NextGatewayResponseServerMessage()
+                            respond(new NextGatewayResponseServerMessage()
                             {
                                 GatewayUrl = url
-                            }));
+                            });
                             break;
                     }
                 });
-                 
+
             });
             client.ConnectToServer("127.0.0.1");
 
@@ -98,10 +98,10 @@ namespace SocketServer
             wssv.AddWebSocketService<CardGame>("/");
             wssv.Start();
 
-           /* timer = new Timer((e) =>
+            timer = new Timer((e) =>
             {
                 Console.WriteLine($"Users Connected: {UsersConnected} Messages Sent: {MessagesSent} Messages Received: {MessagesReceived}");
-            }, null, 0, 500);*/
+            }, null, 0, 500);
 
             threadManager.Process();
 
@@ -187,19 +187,19 @@ namespace SocketServer
             {
                 //                Console.WriteLine("Starting Game socket");
 
-                client.SendPoolMessage("GameServers", Query.Build("NewGame", QueryDirection.Request, QueryType.Client, new CreateNewGameRequest()
+                client.SendPoolMessage("GameServers", "NewGame", new CreateNewGameRequest()
                 {
                     UserKey = user.ID,
                     GameName = "sevens"
-                }));
+                });
             }
             else if (obj is AnswerQuestionSocketMessage)
             {
-                client.SendMessage(uu.GameServer.Id, Query.Build("Answer",QueryDirection.Request, QueryType.Client,new GameServerServerMessage()
+                client.SendClientMessage(uu.GameServer.Id, "Answer", new GameServerServerMessage()
                 {
                     GameId = uu.GameData.GameId,
                     AnswerIndex = ((AnswerQuestionSocketMessage)obj).AnswerIndex
-                }));
+                });
             }
             /*
 

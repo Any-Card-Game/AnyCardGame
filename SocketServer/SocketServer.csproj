@@ -39,11 +39,10 @@
     </Reference>
     <Reference Include="OnPoolClient, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\ServerBroker\OnPoolClient\bin\Debug\OnPoolClient.exe</HintPath>
+      <HintPath>..\..\..\ServerBroker\OnPoolClient\bin\Release\OnPoolClient.dll</HintPath>
     </Reference>
-    <Reference Include="OnPoolCommon, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\ServerBroker\OnPoolClient\bin\Debug\OnPoolCommon.dll</HintPath>
+    <Reference Include="OnPoolCommon">
+      <HintPath>..\..\..\ServerBroker\OnPoolClient\bin\Release\OnPoolCommon.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />

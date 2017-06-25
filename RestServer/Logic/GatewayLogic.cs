@@ -12,12 +12,10 @@ namespace RestServer.Logic
     {
         public static void GetFastestGateway(Action<string> gatewayCallback)
         {
-            Program.client.SendPoolMessage("Gateways", Query.Build("NextGateway", QueryDirection.Request, QueryType.Client),
-                (response) =>
-                {
-                    var nextGateway = response.GetJson<NextGatewayResponseServerMessage>();
-                    gatewayCallback(nextGateway.GatewayUrl);
-                });
+            Program.client.SendPoolMessage<NextGatewayResponseServerMessage>("Gateways", "NextGateway", null, (response) =>
+            {
+                gatewayCallback(response.GatewayUrl);
+            });
 
 
         }

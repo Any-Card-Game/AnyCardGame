@@ -55,7 +55,7 @@ namespace GameServer
                     var gameServerResponse = message.GetJson<GameServerServerMessage>();
                     games[gameServerResponse.GameId].DataClass.curAnswered(gameServerResponse.AnswerIndex);
                 });
-                client.JoinPool("GameServers", (from, message, respond) =>
+                client.JoinPool("GameServers").OnMessage((from, message, respond) =>
                 {
                     switch (message.Method)
                     {
@@ -66,27 +66,25 @@ namespace GameServer
 
                             games.Add(gameId, gameManager);
 
-                            client.SendMessage(from.Id, Query.Build("GameUpdate",QueryDirection.Request, QueryType.Client,new GameUpdateServerMessage()
+                            client.SendClientMessage(from.Id, "GameUpdate", new GameUpdateServerMessage()
                             {
                                 GameId = gameId,
                                 UserKey = createNewGameRequest.UserKey,
                                 GameStatus = GameStatus.Started
-                            }));
+                            });
                             startGame(gameManager);
                             //                Console.WriteLine("New Game Request " + games.Count);
 
                             break;
 
                     }
-
-
                 });
 
             });
             client.ConnectToServer("127.0.0.1");
 
 
-            /*timer = new Timer((e) =>
+            timer = new Timer((e) =>
              {
                  var now = DateTime.Now;
                  var answersPerSecond = 0.0;
@@ -96,7 +94,7 @@ namespace GameServer
                      answersPerSecond = AnswerCount / (now - start).TotalSeconds;
                  }
                  Console.WriteLine($"Games Done: {GamesDone} Answers: {AnswerCount} LiveGames: {games.Count} APS: {answersPerSecond}");
-             }, null, 0, 500)*/;
+             }, null, 0, 500);
 
 
             Console.WriteLine("Running.");
@@ -124,7 +122,7 @@ namespace GameServer
             {
                 curAnswered = a;
 
-                client.SendMessage(GameManager.Gateway.Id, Query.Build("GameUpdate",QueryDirection.Request, QueryType.Client,new GameUpdateServerMessage()
+                client.SendClientMessage(GameManager.Gateway.Id, "GameUpdate", new GameUpdateServerMessage()
                 {
                     GameId = GameManager.GameId,
                     UserKey = GameManager.InitialRequest.UserKey,
@@ -135,7 +133,7 @@ namespace GameServer
                         Answers = answers,
                     },
                     GameStatus = GameStatus.AskQuestion
-                }));
+                });
                 if (start == DateTime.MinValue)
                 {
                     start = DateTime.Now;
@@ -149,12 +147,12 @@ namespace GameServer
                 //                Console.WriteLine(username);
                 GamesDone++;
 
-                client.SendMessage(GameManager.Gateway.Id, Query.Build("GameUpdate", QueryDirection.Request, QueryType.Client, new GameUpdateServerMessage()
+                client.SendClientMessage(GameManager.Gateway.Id, "GameUpdate", new GameUpdateServerMessage()
                 {
                     GameId = GameManager.GameId,
                     UserKey = GameManager.InitialRequest.UserKey,
                     GameStatus = GameStatus.GameOver
-                }));
+                });
                 if (start == DateTime.MinValue)
                 {
                     start = DateTime.Now;
