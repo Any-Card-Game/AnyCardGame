@@ -12,7 +12,7 @@ namespace RestServer.Logic
     {
         public static void GetFastestGateway(Action<string> gatewayCallback)
         {
-            Program.client.SendPoolMessage<NextGatewayResponseServerMessage>("Gateways", "NextGateway", null, (response) =>
+            Program.client.SendPoolFastestMessage<NextGatewayResponseServerMessage>("Gateways", "NextGateway", null, (response) =>
             {
                 gatewayCallback(response.GatewayUrl);
             });

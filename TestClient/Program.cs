@@ -18,7 +18,7 @@ namespace TestClient
         private static Timer timer;
         static void Main(string[] args)
         {
-            Thread.Sleep(500);
+            Thread.Sleep(2000);
 
             now = DateTime.Now;
 
